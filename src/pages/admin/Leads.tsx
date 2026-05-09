@@ -27,6 +27,7 @@ import { Badge } from "@/components/ui/badge";
 import { Eye, Inbox } from "lucide-react";
 import { useLeads } from "@/hooks/use-leads";
 import { leadsStore, type Lead, type LeadStatus } from "@/lib/leads";
+import { useToast } from "@/hooks/use-toast";
 
 const statusColors: Record<LeadStatus, string> = {
   new: "bg-primary/15 text-primary",
@@ -37,6 +38,17 @@ const statusColors: Record<LeadStatus, string> = {
 const Leads = () => {
   const leads = useLeads();
   const [selected, setSelected] = useState<Lead | null>(null);
+  const { toast } = useToast();
+
+  const handleStatusChange = (leadId: string, status: LeadStatus) => {
+    const { assignedRollNumber } = leadsStore.updateStatus(leadId, status);
+    if (assignedRollNumber) {
+      toast({
+        title: `Roll number ${assignedRollNumber} assigned successfully`,
+        className: "border-[#C9922A] bg-[#1B4D3E] text-[#FDF6EC]",
+      });
+    }
+  };
 
   return (
     <div className="space-y-6 max-w-6xl">
@@ -67,6 +79,7 @@ const Leads = () => {
                   <TableHead className="hidden md:table-cell">Message</TableHead>
                   <TableHead>Date</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Roll No</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -85,17 +98,47 @@ const Leads = () => {
                     <TableCell>
                       <Select
                         value={l.status}
-                        onValueChange={(v) => leadsStore.updateStatus(l.id, v as LeadStatus)}
+                        onValueChange={(v) => handleStatusChange(l.id, v as LeadStatus)}
                       >
                         <SelectTrigger className="h-8 w-[130px]">
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="new">New</SelectItem>
-                          <SelectItem value="contacted">Contacted</SelectItem>
-                          <SelectItem value="converted">Converted</SelectItem>
+                        <SelectContent className="bg-white text-[#1B4D3E]">
+                          <SelectItem
+                            value="new"
+                            className="bg-white text-[#1B4D3E] data-[highlighted]:bg-[#F5ECD7] data-[highlighted]:text-[#1B4D3E] data-[state=checked]:bg-[#C9922A] data-[state=checked]:text-[#1B1100] data-[state=checked]:[&_svg]:text-[#1B1100]"
+                          >
+                            New
+                          </SelectItem>
+                          <SelectItem
+                            value="contacted"
+                            className="bg-white text-[#1B4D3E] data-[highlighted]:bg-[#F5ECD7] data-[highlighted]:text-[#1B4D3E] data-[state=checked]:bg-[#C9922A] data-[state=checked]:text-[#1B1100] data-[state=checked]:[&_svg]:text-[#1B1100]"
+                          >
+                            Contacted
+                          </SelectItem>
+                          <SelectItem
+                            value="converted"
+                            className="bg-white text-[#1B4D3E] data-[highlighted]:bg-[#F5ECD7] data-[highlighted]:text-[#1B4D3E] data-[state=checked]:bg-[#C9922A] data-[state=checked]:text-[#1B1100] data-[state=checked]:[&_svg]:text-[#1B1100]"
+                          >
+                            Converted
+                          </SelectItem>
                         </SelectContent>
                       </Select>
+                    </TableCell>
+                    <TableCell>
+                      {l.rollNumber ? (
+                        <span
+                          className={
+                            l.status === "converted"
+                              ? "font-bold text-[#C9922A]"
+                              : "font-semibold text-[#7A8C7E]"
+                          }
+                        >
+                          {l.rollNumber}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
                     </TableCell>
                     <TableCell className="text-right">
                       <Button

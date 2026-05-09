@@ -6,55 +6,54 @@
 
 @layer base {
   :root {
-    /* Deep forest green base with warm gold accents */
-    --background: 159 48% 21%;        /* #1B4D3E */
-    --foreground: 46 65% 90%;          /* #F5EDD6 cream */
+    --background: 34 78% 96%;          /* #FDF6EC */
+    --foreground: 156 48% 20%;         /* #1B4D3E */
 
-    --card: 154 44% 16%;               /* #163828 muted dark green */
-    --card-foreground: 46 65% 90%;
+    --card: 0 0% 100%;                 /* #FFFFFF */
+    --card-foreground: 156 48% 20%;
 
-    --popover: 159 50% 12%;            /* #0F2D22 */
-    --popover-foreground: 46 65% 90%;
+    --popover: 0 0% 100%;              /* #FFFFFF */
+    --popover-foreground: 156 48% 20%;
 
-    --primary: 44 80% 46%;             /* #D4A017 gold */
-    --primary-foreground: 0 0% 10%;    /* #1A1A1A */
+    --primary: 40 60% 48%;             /* #C9922A */
+    --primary-foreground: 29 100% 5%;  /* #1B1100 */
 
-    --secondary: 44 75% 62%;           /* lighter warm gold for contrast on dark green */
-    --secondary-foreground: 159 50% 12%;
+    --secondary: 42 56% 92%;           /* #F5ECD7 */
+    --secondary-foreground: 156 48% 20%;
 
-    --muted: 154 44% 16%;
-    --muted-foreground: 46 40% 80%;
+    --muted: 42 56% 92%;               /* #F5ECD7 */
+    --muted-foreground: 146 13% 33%;   /* #4A5E52 */
 
-    --accent: 40 65% 47%;              /* #C9922A warm gold */
+    --accent: 156 48% 20%;             /* #1B4D3E */
     --accent-foreground: 0 0% 10%;
 
     --destructive: 0 70% 50%;
     --destructive-foreground: 46 65% 95%;
 
-    --border: 44 50% 35%;              /* gold-toned border */
-    --input: 154 30% 25%;
-    --ring: 44 80% 46%;
+    --border: 42 59% 78%;              /* #E8D5A3 */
+    --input: 40 60% 48%;               /* #C9922A */
+    --ring: 40 60% 48%;
 
     --radius: 0.75rem;
 
     /* Custom colors */
-    --gold: 44 80% 46%;
-    --saffron: 40 65% 47%;
-    --burgundy: 159 50% 12%;
-    --teal: 159 48% 21%;
-    --cream: 46 65% 90%;
-    --warm-brown: 159 50% 8%;
+    --gold: 40 60% 48%;
+    --saffron: 40 60% 48%;
+    --burgundy: 156 49% 12%;           /* #0F2D22 */
+    --teal: 156 48% 20%;
+    --cream: 38 36% 85%;               /* #D9CDB8 */
+    --warm-brown: 31 100% 18%;         /* #5C3A00 */
 
     /* Gradients */
-    --gradient-hero: linear-gradient(135deg, hsl(159 50% 12%), hsl(159 48% 21%) 50%, hsl(154 44% 16%));
-    --gradient-card: linear-gradient(180deg, hsl(154 44% 16%), hsl(159 48% 14%));
-    --gradient-accent: linear-gradient(135deg, hsl(44 80% 46%), hsl(40 65% 47%));
-    --gradient-warm: linear-gradient(135deg, hsl(44 80% 60%), hsl(40 65% 47%));
+    --gradient-hero: linear-gradient(135deg, hsl(34 78% 96% / 0.96), hsl(34 78% 96% / 0.9), hsl(34 78% 96% / 0.94));
+    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%), hsl(0 0% 100%));
+    --gradient-accent: linear-gradient(135deg, hsl(40 60% 48%), hsl(40 60% 48%));
+    --gradient-warm: linear-gradient(135deg, hsl(42 56% 92%), hsl(34 78% 96%));
 
     /* Shadows */
-    --shadow-soft: 0 4px 20px hsl(159 50% 5% / 0.4);
-    --shadow-card: 0 8px 30px hsl(159 50% 5% / 0.5);
-    --shadow-glow: 0 0 40px hsl(44 80% 46% / 0.4);
+    --shadow-soft: 0 6px 24px hsl(0 0% 0% / 0.06);
+    --shadow-card: 0 10px 30px hsl(0 0% 0% / 0.08);
+    --shadow-glow: 0 0 36px hsl(40 60% 48% / 0.22);
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;

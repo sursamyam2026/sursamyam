@@ -54,37 +54,36 @@ const ContactSection = () => {
   ];
 
   return (
-    <section id="contact" className="py-16 lg:py-24 relative overflow-hidden">
-      {/* Background Elements */}
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-gold/5" />
-      <div className="absolute top-20 right-0 w-64 h-64 rounded-full bg-primary/10 blur-3xl" />
-      <div className="absolute bottom-0 left-0 w-96 h-96 rounded-full bg-gold/10 blur-3xl" />
-
-      <div className="container relative z-10 mx-auto px-4">
-        <div className="max-w-6xl mx-auto">
-          {/* Section Header */}
-          <div className="text-center mb-16">
-            <span className="inline-block px-4 py-1 rounded-full bg-gold/10 text-gold text-sm font-medium mb-4">
-              Get in Touch
-            </span>
-            <h2 className="font-display text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-6">
-              Ready to Begin Your Journey?
-            </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Have questions? Want to book a trial class? Reach out and let's start 
-              your musical adventure together.
-            </p>
+    <>
+      <section id="contact" className="scroll-mt-[100px] relative overflow-hidden bg-[#1B4D3E] px-8 py-20">
+        <div className="container relative z-10 mx-auto px-4">
+          <div className="mx-auto max-w-6xl">
+            <div className="text-center">
+              <span className="mb-4 inline-block rounded-full border border-[#C9922A] bg-[#F5ECD7] px-4 py-1 text-[0.8rem] font-medium text-[#5C3A00]">
+                Get in Touch
+              </span>
+              <h2 className="mb-6 font-display text-3xl font-bold text-white md:text-4xl lg:text-5xl">
+                Ready to Begin Your Journey?
+              </h2>
+              <p className="mx-auto max-w-2xl text-lg text-[#D9CDB8]">
+                Have questions? Want to book a trial class? Reach out and let's start
+                your musical adventure together.
+              </p>
+            </div>
           </div>
+        </div>
+      </section>
 
-          <div className="grid lg:grid-cols-5 gap-12">
-            {/* Contact Info */}
-            <div className="lg:col-span-2 space-y-8">
+      <section className="bg-[#FDF6EC] px-8 py-20">
+        <div className="container mx-auto px-4">
+          <div className="mx-auto grid max-w-6xl gap-12 lg:grid-cols-5">
+            <div className="space-y-8 lg:col-span-2">
               <div>
-                <h3 className="font-display text-2xl font-semibold text-foreground mb-4">
+                <h3 className="mb-4 font-display text-2xl font-semibold text-[#1B4D3E]">
                   Let's Connect
                 </h3>
-                <p className="text-muted-foreground">
-                  Whether you're curious about classes, interested in a trial session, 
+                <p className="text-[#4A5E52]">
+                  Whether you're curious about classes, interested in a trial session,
                   or just want to chat about music—I'm here for you.
                 </p>
               </div>
@@ -94,48 +93,46 @@ const ContactSection = () => {
                   <a
                     key={item.label}
                     href={item.href}
-                    className="flex items-center gap-4 p-4 rounded-xl bg-card hover:bg-muted transition-colors group"
+                    className="group flex items-center gap-4 rounded-xl bg-white p-4 transition-colors hover:bg-white"
                   >
-                    <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                      <item.icon className="w-5 h-5 text-primary" />
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#F5ECD7]">
+                      <item.icon className="h-5 w-5 text-[#C9922A]" />
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">{item.label}</p>
-                      <p className="font-medium text-foreground">{item.value}</p>
+                      <p className="text-sm text-[#1B4D3E]">{item.label}</p>
+                      <p className="font-medium text-[#1B4D3E]">{item.value}</p>
                     </div>
                   </a>
                 ))}
               </div>
 
-              {/* Decorative Quote */}
-              <Card variant="glass" className="p-6 mt-8">
-                <div className="flex items-center gap-3 mb-3">
-                  <Music className="w-5 h-5 text-primary" />
-                  <span className="text-sm font-medium text-primary">A thought...</span>
+              <Card variant="glass" className="mt-8 bg-white p-6">
+                <div className="mb-3 flex items-center gap-3">
+                  <Music className="h-5 w-5 text-[#C9922A]" />
+                  <span className="text-sm font-medium text-[#1B4D3E]">A thought...</span>
                 </div>
-                <p className="font-display text-lg italic text-foreground">
+                <p className="font-display text-lg italic text-[#1B4D3E]">
                   "The voice is the original instrument. Let's discover yours together."
                 </p>
               </Card>
             </div>
 
-            {/* Contact Form */}
-            <Card variant="elevated" className="lg:col-span-3 p-8">
+            <Card variant="elevated" className="bg-white p-8 lg:col-span-3">
               <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="grid sm:grid-cols-2 gap-6">
+                <div className="grid gap-6 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="name">Your Name</Label>
+                    <Label htmlFor="name" className="text-[#1B4D3E]">Your Name</Label>
                     <Input
                       id="name"
                       placeholder="Enter your name"
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       required
-                      className="h-12"
+                      className="h-12 border-[#C9922A] bg-white text-[#1B4D3E] placeholder:text-[#4A5E52]"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="email">Email Address</Label>
+                    <Label htmlFor="email" className="text-[#1B4D3E]">Email Address</Label>
                     <Input
                       id="email"
                       type="email"
@@ -143,44 +140,44 @@ const ContactSection = () => {
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       required
-                      className="h-12"
+                      className="h-12 border-[#C9922A] bg-white text-[#1B4D3E] placeholder:text-[#4A5E52]"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number (Optional)</Label>
+                  <Label htmlFor="phone" className="text-[#1B4D3E]">Phone Number (Optional)</Label>
                   <Input
                     id="phone"
                     placeholder="Enter your phone number"
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="h-12"
+                    className="h-12 border-[#C9922A] bg-white text-[#1B4D3E] placeholder:text-[#4A5E52]"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="message">Your Message</Label>
+                  <Label htmlFor="message" className="text-[#1B4D3E]">Your Message</Label>
                   <Textarea
                     id="message"
                     placeholder="Tell me about your musical interests, experience level, and what you hope to learn..."
                     value={formData.message}
                     onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                     required
-                    className="min-h-[150px] resize-none"
+                    className="min-h-[150px] resize-none border-[#C9922A] bg-white text-[#1B4D3E] placeholder:text-[#4A5E52]"
                   />
                 </div>
 
-                <Button type="submit" variant="hero" size="lg" className="w-full">
-                  <Send className="w-5 h-5 mr-2" />
+                <Button type="submit" variant="hero" size="lg" className="w-full bg-[#C9922A] text-[#1B1100]">
+                  <Send className="mr-2 h-5 w-5" />
                   Send Message
                 </Button>
               </form>
             </Card>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
+    </>
   );
 };
 

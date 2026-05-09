@@ -33,10 +33,10 @@ const Navbar = () => {
   const contactHref = sectionHref("contact");
 
   const linkClass =
-    "text-foreground/80 hover:text-primary font-medium transition-colors relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-primary hover:after:w-full after:transition-all";
+    "text-[#1B4D3E] hover:text-[#C9922A] font-medium transition-colors relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-[#C9922A] hover:after:w-full after:transition-all";
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-popover/95 backdrop-blur-md border-b border-primary/20">
+    <nav className="fixed top-0 left-0 right-0 z-50 border-b border-[#E8D5A3] bg-[#FDF6EC]/95 shadow-[0_2px_12px_rgba(0,0,0,0.06)] backdrop-blur-md">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between py-2 min-h-16 lg:min-h-20">
           {/* Logo */}
@@ -46,7 +46,7 @@ const Navbar = () => {
               alt="Sur Samyam School of Music"
               className="h-14 w-14 rounded-full object-cover shadow-md ring-2 ring-primary/40 group-hover:scale-105 transition-transform duration-300"
             />
-            <span className="font-display text-xl font-bold text-primary">
+            <span className="font-display text-xl font-bold text-[#C9922A]">
               Sur Samyam
             </span>
           </Link>
@@ -60,12 +60,10 @@ const Navbar = () => {
             ))}
 
             <DropdownMenu>
-              <DropdownMenuTrigger
-                className={`${linkClass} flex items-center gap-1 outline-none`}
-              >
-                Fees <ChevronDown className="w-4 h-4" />
+              <DropdownMenuTrigger className={`${linkClass} flex items-center gap-1 outline-none`}>
+                Fees <ChevronDown className="h-4 w-4 text-[#1B4D3E]" />
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-56">
+              <DropdownMenuContent align="start" className="w-56 border-[#E8D5A3] bg-[#FDF6EC] text-[#1B4D3E]">
                 {feesLinks.map((l) => (
                   <DropdownMenuItem key={l.to} asChild>
                     <Link to={l.to} className="cursor-pointer">
@@ -83,14 +81,14 @@ const Navbar = () => {
 
           {/* CTA Button */}
           <div className="hidden lg:block">
-            <Button variant="hero" size="default" asChild>
+            <Button variant="hero" size="default" className="text-[#1B1100]" asChild>
               <a href={contactHref}>Start Learning</a>
             </Button>
           </div>
 
           {/* Mobile Menu Toggle */}
           <button
-            className="lg:hidden p-2 text-foreground"
+            className="p-2 text-[#1B4D3E] lg:hidden"
             onClick={() => setIsOpen(!isOpen)}
             aria-label="Toggle menu"
           >
@@ -100,13 +98,13 @@ const Navbar = () => {
 
         {/* Mobile Navigation */}
         {isOpen && (
-          <div className="lg:hidden py-4 border-t border-border/50 animate-fade-up">
+          <div className="animate-fade-up border-t border-[#E8D5A3] bg-[#FDF6EC] py-4 lg:hidden">
             <div className="flex flex-col gap-4">
               {sectionLinks.map((link) => (
                 <a
                   key={link.hash}
                   href={sectionHref(link.hash)}
-                  className="text-foreground/80 hover:text-primary font-medium py-2 transition-colors"
+                  className="py-2 font-medium text-[#1B4D3E] transition-colors hover:text-[#C9922A]"
                   onClick={() => setIsOpen(false)}
                 >
                   {link.label}
@@ -115,11 +113,11 @@ const Navbar = () => {
 
               <button
                 onClick={() => setMobileFeesOpen((v) => !v)}
-                className="flex items-center justify-between text-foreground/80 hover:text-primary font-medium py-2 transition-colors"
+                className="flex items-center justify-between py-2 font-medium text-[#1B4D3E] transition-colors hover:text-[#C9922A]"
               >
                 Fees
                 <ChevronDown
-                  className={`w-4 h-4 transition-transform ${
+                  className={`h-4 w-4 text-[#1B4D3E] transition-transform ${
                     mobileFeesOpen ? "rotate-180" : ""
                   }`}
                 />
@@ -131,7 +129,7 @@ const Navbar = () => {
                       key={l.to}
                       to={l.to}
                       onClick={() => setIsOpen(false)}
-                      className="text-foreground/80 hover:text-primary text-sm py-1"
+                    className="py-1 text-sm text-[#1B4D3E] hover:text-[#C9922A]"
                     >
                       {l.label}
                     </Link>
@@ -141,13 +139,13 @@ const Navbar = () => {
 
               <a
                 href={contactHref}
-                className="text-foreground/80 hover:text-primary font-medium py-2 transition-colors"
+                className="py-2 font-medium text-[#1B4D3E] transition-colors hover:text-[#C9922A]"
                 onClick={() => setIsOpen(false)}
               >
                 Contact
               </a>
 
-              <Button variant="hero" className="mt-2" asChild>
+              <Button variant="hero" className="mt-2 text-[#1B1100]" asChild>
                 <a href={contactHref} onClick={() => setIsOpen(false)}>
                   Start Learning
                 </a>

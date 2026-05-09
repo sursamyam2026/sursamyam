@@ -49,17 +49,17 @@ const TestimonialsSection = () => {
   };
 
   return (
-    <section className="py-16 lg:py-24 bg-gradient-to-b from-background to-muted/30 overflow-hidden">
+    <section className="overflow-hidden bg-[#FDF6EC] px-8 py-20">
       <div className="container mx-auto px-4">
         {/* Header */}
         <div className="text-center mb-16">
-          <span className="inline-block px-4 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
+          <span className="mb-4 inline-block rounded-full border border-[#C9922A] bg-[#F5ECD7] px-4 py-1 text-[0.8rem] font-medium text-[#5C3A00]">
             Student Stories
           </span>
           <h2 className="font-display text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4">
             What Our Students Say
           </h2>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
+          <p className="mx-auto max-w-2xl text-[#4A5E52]">
             Hear from students who have embarked on their musical journey with us
           </p>
         </div>
@@ -67,14 +67,14 @@ const TestimonialsSection = () => {
         {/* Testimonial Cards */}
         <div className="relative max-w-4xl mx-auto">
           {/* Background decorative elements */}
-          <div className="absolute -top-10 -left-10 w-32 h-32 bg-primary/5 rounded-full blur-3xl" />
-          <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-gold/5 rounded-full blur-3xl" />
+          <div className="absolute -top-10 -left-10 h-32 w-32 rounded-full bg-primary/5 blur-3xl" />
+          <div className="absolute -bottom-10 -right-10 h-40 w-40 rounded-full bg-gold/5 blur-3xl" />
 
           {/* Main testimonial card */}
-          <div className="relative bg-card border border-border/50 rounded-3xl p-8 md:p-12 shadow-soft">
+          <div className="relative rounded-[12px] border-[1.5px] border-[#C9922A] bg-white p-8 shadow-soft md:p-12">
             {/* Quote icon */}
-            <div className="absolute -top-6 left-8 w-12 h-12 bg-primary rounded-2xl flex items-center justify-center shadow-lg">
-              <Quote className="w-6 h-6 text-primary-foreground" />
+            <div className="absolute -top-6 left-8 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#F5ECD7] shadow-lg">
+              <Quote className="h-6 w-6 text-[#C9922A]" />
             </div>
 
             {/* Content */}
@@ -87,21 +87,21 @@ const TestimonialsSection = () => {
               </div>
 
               {/* Quote text */}
-              <blockquote className="text-lg md:text-xl text-foreground/90 leading-relaxed mb-8 min-h-[100px]">
+              <blockquote className="mb-8 min-h-[100px] text-lg leading-relaxed text-[#4A5E52] md:text-xl">
                 "{testimonials[currentIndex].text}"
               </blockquote>
 
               {/* Author */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary to-gold flex items-center justify-center text-primary-foreground font-display font-bold text-lg">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#F5ECD7] font-display text-lg font-bold text-[#C9922A]">
                     {testimonials[currentIndex].avatar}
                   </div>
                   <div>
-                    <div className="font-display font-semibold text-foreground">
+                    <div className="font-display font-semibold text-[#1B4D3E]">
                       {testimonials[currentIndex].name}
                     </div>
-                    <div className="text-sm text-muted-foreground">
+                    <div className="text-sm text-[#7A8C7E]">
                       {testimonials[currentIndex].location}
                     </div>
                   </div>
@@ -113,7 +113,7 @@ const TestimonialsSection = () => {
                     variant="outline"
                     size="icon"
                     onClick={prevTestimonial}
-                    className="rounded-full hover:bg-primary hover:text-primary-foreground transition-colors"
+                    className="rounded-full text-[#1B4D3E] transition-colors"
                   >
                     <ChevronLeft className="w-5 h-5" />
                   </Button>
@@ -121,7 +121,7 @@ const TestimonialsSection = () => {
                     variant="outline"
                     size="icon"
                     onClick={nextTestimonial}
-                    className="rounded-full hover:bg-primary hover:text-primary-foreground transition-colors"
+                    className="rounded-full text-[#1B4D3E] transition-colors"
                   >
                     <ChevronRight className="w-5 h-5" />
                   </Button>
@@ -136,10 +136,10 @@ const TestimonialsSection = () => {
               <button
                 key={index}
                 onClick={() => setCurrentIndex(index)}
-                className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
+                className={`h-2.5 w-2.5 rounded-full transition-all duration-300 ${
                   index === currentIndex
-                    ? "bg-primary w-8"
-                    : "bg-muted-foreground/30 hover:bg-muted-foreground/50"
+                    ? "w-8 bg-[#C9922A]"
+                    : "bg-[#C9922A]/30 hover:bg-[#C9922A]/30"
                 }`}
                 aria-label={`Go to testimonial ${index + 1}`}
               />
