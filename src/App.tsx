@@ -13,6 +13,12 @@ import Dashboard from "./pages/admin/Dashboard";
 import Leads from "./pages/admin/Leads";
 import { AdminLayout } from "./components/admin/AdminLayout";
 import { ProtectedRoute } from "./components/admin/ProtectedRoute";
+import { StudentProtectedRoute } from "./components/student/StudentProtectedRoute";
+import StudentLogin from "./pages/student/StudentLogin";
+import StudentRegister from "./pages/student/StudentRegister";
+import StudentDashboard from "./pages/student/StudentDashboard";
+import EnrollStart from "./pages/student/EnrollStart";
+import EnrollPayment from "./pages/student/EnrollPayment";
 
 const queryClient = new QueryClient();
 
@@ -25,6 +31,18 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/student/login" element={<StudentLogin />} />
+          <Route path="/student/register" element={<StudentRegister />} />
+          <Route path="/student/enroll" element={<EnrollStart />} />
+          <Route path="/student/enroll/payment" element={<EnrollPayment />} />
+          <Route
+            path="/student/dashboard"
+            element={
+              <StudentProtectedRoute>
+                <StudentDashboard />
+              </StudentProtectedRoute>
+            }
+          />
           <Route path="/fees/new-student" element={<NewStudent />} />
           <Route path="/fees/existing-student" element={<ExistingStudent />} />
           <Route path="/fees/exam-registration" element={<ExamRegistration />} />

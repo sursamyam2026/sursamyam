@@ -1,48 +1,25 @@
 import FeesPageLayout from "@/components/fees/FeesPageLayout";
-import CourseCard, { Course } from "@/components/fees/CourseCard";
+import CourseCard from "@/components/fees/CourseCard";
 import { Card } from "@/components/ui/card";
 import { useLocation } from "react-router-dom";
 import { leadsStore } from "@/lib/leads";
+import { useStudentAuth } from "@/hooks/use-student-auth";
+import {
+  adultCourses as adultFeeCourses,
+  kidsCourses as kidsFeeCourses,
+  toCourseCardFormat,
+} from "@/lib/fees-courses";
 
-const adultCourses: Course[] = [
-  {
-    name: "Shadaj",
-    monthly: "₹4,000",
-    registration: "₹1,000",
-    total: "₹5,000",
-    description: "One-on-One class per week – 1 Hour.",
-    highlight: true,
-  },
-  {
-    name: "Pancham",
-    monthly: "₹2,000",
-    registration: "₹1,000",
-    total: "₹3,000",
-    description: "Two group classes per week – 1 Hour each.",
-  },
-];
-
-const kidsCourses: Course[] = [
-  {
-    name: "Gandhar",
-    monthly: "₹4,000",
-    registration: "₹1,000",
-    total: "₹5,000",
-    description: "One-on-One class per week – 1 Hour.",
-    highlight: true,
-  },
-  {
-    name: "Nishad",
-    monthly: "₹2,000",
-    registration: "₹1,000",
-    total: "₹3,000",
-    description: "Two group classes per week – 1 Hour each.",
-  },
-];
+const adultCourses = adultFeeCourses.map(toCourseCardFormat);
+const kidsCourses = kidsFeeCourses.map(toCourseCardFormat);
 
 const NewStudent = () => {
   const location = useLocation();
-  const studentEmail = new URLSearchParams(location.search).get("email")?.trim().toLowerCase() ?? "";
+  const { session } = useStudentAuth();
+  const queryEmail =
+    new URLSearchParams(location.search).get("email")?.trim().toLowerCase() ?? "";
+  const studentEmail =
+    session?.email.trim().toLowerCase() || queryEmail;
   const studentLead = studentEmail ? leadsStore.findByEmail(studentEmail) : null;
   const rollNumber = studentLead?.rollNumber;
 

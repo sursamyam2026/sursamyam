@@ -1,0 +1,182 @@
+import { useState } from "react";
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { useToast } from "@/hooks/use-toast";
+import { useStudentAuth } from "@/hooks/use-student-auth";
+import type { EnrollCheckoutState } from "@/pages/student/EnrollStart";
+import {
+  CONVENIENCE_FEE_RUPEES,
+  formatRupee,
+  getCourse,
+} from "@/lib/fees-courses";
+import { EnrollmentTermsContent } from "@/content/enrollment-terms";
+
+const EnrollPayment = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const { isAuthenticated, completeEnrollmentCheckout } = useStudentAuth();
+  const state = location.state as EnrollCheckoutState | null | undefined;
+
+  const [agreed, setAgreed] = useState(false);
+
+  if (isAuthenticated) {
+    return <Navigate to="/student/dashboard" replace />;
+  }
+
+  if (!state?.email || !state.password || !state.courseName || !state.track) {
+    return <Navigate to="/student/enroll" replace />;
+  }
+
+  const fc = getCourse(state.track, state.courseName);
+  if (!fc) {
+    return <Navigate to="/student/enroll" replace />;
+  }
+
+  const monthly = fc.monthlyRupee;
+  const registration = fc.registrationRupee;
+  const subtotal = monthly + registration;
+  const convenience = CONVENIENCE_FEE_RUPEES;
+  const grand = subtotal + convenience;
+
+  const handleNext = () => {
+    if (!agreed) return;
+    const demoAt = new Date().toISOString();
+    const payment = {
+      courseName: fc.name,
+      track: state.track,
+      monthlyRupee: monthly,
+      registrationRupee: registration,
+      convenienceRupee: convenience,
+      grandTotalRupee: grand,
+      demoCompletedAt: demoAt,
+      paymentStatus: "demo_completed" as const,
+    };
+
+    const result = completeEnrollmentCheckout({
+      name: state.name,
+      email: state.email,
+      password: state.password,
+      phone: state.phone,
+      age: state.age,
+      city: state.city,
+      country: state.country,
+      track: state.track,
+      courseName: fc.name,
+      payment,
+    });
+
+    if (!result.ok) {
+      toast({ title: "Could not enroll", description: result.error });
+      return;
+    }
+
+    toast({
+      title: "Enrollment submitted",
+      description: "Demo checkout complete. Payment gateway can be wired to this step next.",
+    });
+    navigate("/student/dashboard", { replace: true });
+  };
+
+  return (
+    <div className="min-h-screen bg-muted/30 px-4 py-10">
+      <div className="mx-auto max-w-lg space-y-6">
+        <Card variant="elevated" className="p-8">
+          <h1 className="font-display text-2xl font-bold text-[#1B4D3E] mb-6">Payment summary</h1>
+
+          <dl className="space-y-4 text-sm">
+            <div className="flex justify-between gap-4 border-b border-[#E8D5A3] pb-3">
+              <dt className="text-[#4A5E52]">
+                1 × {fc.name} <span className="text-muted-foreground">(monthly)</span>
+              </dt>
+              <dd className="font-medium text-[#1B4D3E]">{formatRupee(monthly)}</dd>
+            </div>
+            <div className="flex justify-between gap-4 border-b border-[#E8D5A3] pb-3">
+              <dt className="text-[#4A5E52]">Registration fee (one-time)</dt>
+              <dd className="font-medium text-[#1B4D3E]">{formatRupee(registration)}</dd>
+            </div>
+            <div className="flex justify-between gap-4 border-b border-[#E8D5A3] pb-3">
+              <dt className="text-[#4A5E52]">Total</dt>
+              <dd className="font-medium text-[#1B4D3E]">{formatRupee(subtotal)}</dd>
+            </div>
+            <div className="flex justify-between gap-4 border-b border-[#E8D5A3] pb-3">
+              <dt className="text-[#4A5E52]">Convenience fee</dt>
+              <dd className="font-medium text-[#1B4D3E]">{formatRupee(convenience)}</dd>
+            </div>
+            <div className="flex justify-between gap-4 pt-2 text-base">
+              <dt className="font-display font-semibold text-[#1B4D3E]">Grand total</dt>
+              <dd className="font-display font-bold text-[#C9922A]">{formatRupee(grand)}</dd>
+            </div>
+          </dl>
+
+          <div className="mt-8 flex flex-wrap items-center gap-3">
+            <Checkbox
+              id="terms"
+              checked={agreed}
+              onCheckedChange={(c) => setAgreed(c === true)}
+            />
+            <Label htmlFor="terms" className="cursor-pointer text-sm leading-snug text-[#4A5E52]">
+              I have read and agree to the Terms and Conditions.
+            </Label>
+            <Dialog>
+              <DialogTrigger asChild>
+                <button
+                  type="button"
+                  className="text-sm font-medium text-[#C9922A] underline-offset-2 hover:underline"
+                >
+                  View Terms
+                </button>
+              </DialogTrigger>
+              <DialogContent className="max-h-[90vh] max-w-lg border-[#E8D5A3] bg-[#FDF6EC]">
+                <DialogHeader>
+                  <DialogTitle className="font-display text-[#1B4D3E]">
+                    Sur Samyam · Terms and Conditions
+                  </DialogTitle>
+                </DialogHeader>
+                <ScrollArea className="max-h-[65vh] pr-4">
+                  <EnrollmentTermsContent />
+                </ScrollArea>
+              </DialogContent>
+            </Dialog>
+          </div>
+
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row-reverse sm:justify-between">
+            <Button
+              variant="hero"
+              className="w-full sm:w-auto"
+              disabled={!agreed}
+              onClick={handleNext}
+            >
+              Next
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full sm:w-auto"
+              onClick={() =>
+                navigate("/student/enroll", {
+                  state,
+                })
+              }
+            >
+              Cancel
+            </Button>
+          </div>
+        </Card>
+      </div>
+    </div>
+  );
+};
+
+export default EnrollPayment;

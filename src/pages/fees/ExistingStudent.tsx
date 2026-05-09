@@ -3,10 +3,14 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link, useLocation } from "react-router-dom";
 import { leadsStore } from "@/lib/leads";
+import { useStudentAuth } from "@/hooks/use-student-auth";
 
 const ExistingStudent = () => {
   const location = useLocation();
-  const studentEmail = new URLSearchParams(location.search).get("email")?.trim().toLowerCase() ?? "";
+  const { session } = useStudentAuth();
+  const queryEmail =
+    new URLSearchParams(location.search).get("email")?.trim().toLowerCase() ?? "";
+  const studentEmail = session?.email.trim().toLowerCase() || queryEmail;
   const studentLead = studentEmail ? leadsStore.findByEmail(studentEmail) : null;
   const rollNumber = studentLead?.rollNumber;
 

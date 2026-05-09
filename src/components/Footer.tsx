@@ -1,4 +1,5 @@
 import { Heart, Instagram, Youtube, Mail } from "lucide-react";
+import { Link } from "react-router-dom";
 import logo from "@/assets/logo.jpeg";
 
 const Footer = () => {
@@ -17,6 +18,9 @@ const Footer = () => {
     { href: "#teacher", label: "Your Teacher" },
     { href: "/fees/new-student", label: "Fees" },
     { href: "#contact", label: "Contact" },
+    { href: "/student/register", label: "Student Register" },
+    { href: "/student/login", label: "Student Login" },
+    { href: "/student/enroll", label: "Enroll & pay" },
   ];
 
   return (
@@ -42,12 +46,21 @@ const Footer = () => {
               <ul className="space-y-2">
                 {quickLinks.map((link) => (
                   <li key={link.href}>
-                    <a 
-                      href={link.href} 
-                    className="text-sm text-[#D9CDB8] transition-colors hover:text-[#C9922A]"
-                    >
-                      {link.label}
-                    </a>
+                    {link.href.startsWith("/") ? (
+                      <Link
+                        to={link.href}
+                        className="text-sm text-[#D9CDB8] transition-colors hover:text-[#C9922A]"
+                      >
+                        {link.label}
+                      </Link>
+                    ) : (
+                      <a
+                        href={link.href}
+                        className="text-sm text-[#D9CDB8] transition-colors hover:text-[#C9922A]"
+                      >
+                        {link.label}
+                      </a>
+                    )}
                   </li>
                 ))}
               </ul>

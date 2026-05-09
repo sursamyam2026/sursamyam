@@ -29,11 +29,26 @@ import { useLeads } from "@/hooks/use-leads";
 import { leadsStore, type Lead, type LeadStatus } from "@/lib/leads";
 import { useToast } from "@/hooks/use-toast";
 
+const itemClass =
+  "bg-white text-[#1B4D3E] data-[highlighted]:bg-[#F5ECD7] data-[highlighted]:text-[#1B4D3E] data-[state=checked]:bg-[#C9922A] data-[state=checked]:text-[#1B1100] data-[state=checked]:[&_svg]:text-[#1B1100]";
+
 const statusColors: Record<LeadStatus, string> = {
   new: "bg-primary/15 text-primary",
   contacted: "bg-gold/20 text-gold-foreground",
-  converted: "bg-green-500/15 text-green-700 dark:text-green-400",
+  converted: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400",
+  registered: "bg-blue-500/10 text-blue-800 dark:text-blue-300",
+  enrolled: "bg-green-500/15 text-green-700 dark:text-green-400",
+  declined: "bg-muted text-muted-foreground",
 };
+
+const STATUSES: { value: LeadStatus; label: string }[] = [
+  { value: "new", label: "New" },
+  { value: "contacted", label: "Contacted" },
+  { value: "converted", label: "Converted" },
+  { value: "registered", label: "Registered" },
+  { value: "enrolled", label: "Enrolled" },
+  { value: "declined", label: "Declined" },
+];
 
 const Leads = () => {
   const leads = useLeads();
@@ -48,6 +63,12 @@ const Leads = () => {
         className: "border-[#C9922A] bg-[#1B4D3E] text-[#FDF6EC]",
       });
     }
+  };
+
+  const rollDisplayClass = (l: Lead) => {
+    if (!l.rollNumber) return null;
+    if (l.status === "enrolled") return "font-bold text-[#C9922A]";
+    return "font-semibold text-[#7A8C7E]";
   };
 
   return (
@@ -100,42 +121,21 @@ const Leads = () => {
                         value={l.status}
                         onValueChange={(v) => handleStatusChange(l.id, v as LeadStatus)}
                       >
-                        <SelectTrigger className="h-8 w-[130px]">
+                        <SelectTrigger className="h-8 min-w-[140px] w-[140px] sm:w-auto">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent className="bg-white text-[#1B4D3E]">
-                          <SelectItem
-                            value="new"
-                            className="bg-white text-[#1B4D3E] data-[highlighted]:bg-[#F5ECD7] data-[highlighted]:text-[#1B4D3E] data-[state=checked]:bg-[#C9922A] data-[state=checked]:text-[#1B1100] data-[state=checked]:[&_svg]:text-[#1B1100]"
-                          >
-                            New
-                          </SelectItem>
-                          <SelectItem
-                            value="contacted"
-                            className="bg-white text-[#1B4D3E] data-[highlighted]:bg-[#F5ECD7] data-[highlighted]:text-[#1B4D3E] data-[state=checked]:bg-[#C9922A] data-[state=checked]:text-[#1B1100] data-[state=checked]:[&_svg]:text-[#1B1100]"
-                          >
-                            Contacted
-                          </SelectItem>
-                          <SelectItem
-                            value="converted"
-                            className="bg-white text-[#1B4D3E] data-[highlighted]:bg-[#F5ECD7] data-[highlighted]:text-[#1B4D3E] data-[state=checked]:bg-[#C9922A] data-[state=checked]:text-[#1B1100] data-[state=checked]:[&_svg]:text-[#1B1100]"
-                          >
-                            Converted
-                          </SelectItem>
+                          {STATUSES.map((s) => (
+                            <SelectItem key={s.value} value={s.value} className={itemClass}>
+                              {s.label}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </TableCell>
                     <TableCell>
                       {l.rollNumber ? (
-                        <span
-                          className={
-                            l.status === "converted"
-                              ? "font-bold text-[#C9922A]"
-                              : "font-semibold text-[#7A8C7E]"
-                          }
-                        >
-                          {l.rollNumber}
-                        </span>
+                        <span className={rollDisplayClass(l) ?? ""}>{l.rollNumber}</span>
                       ) : (
                         <span className="text-muted-foreground">—</span>
                       )}
