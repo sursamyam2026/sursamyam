@@ -13,6 +13,9 @@ import Dashboard from "./pages/admin/Dashboard";
 import Leads from "./pages/admin/Leads";
 import { AdminLayout } from "./components/admin/AdminLayout";
 import { ProtectedRoute } from "./components/admin/ProtectedRoute";
+import EnrollStart from "./pages/student/EnrollStart";
+import EnrollPayment from "./pages/student/EnrollPayment";
+import EnrollSubmitted from "./pages/student/EnrollSubmitted";
 
 const queryClient = new QueryClient();
 
@@ -28,6 +31,9 @@ const App = () => (
           <Route path="/fees/new-student" element={<NewStudent />} />
           <Route path="/fees/existing-student" element={<ExistingStudent />} />
           <Route path="/fees/exam-registration" element={<ExamRegistration />} />
+          <Route path="/student/enroll" element={<EnrollStart />} />
+          <Route path="/student/enroll/payment" element={<EnrollPayment />} />
+          <Route path="/student/enroll/submitted" element={<EnrollSubmitted />} />
           <Route
             path="/admin"
             element={

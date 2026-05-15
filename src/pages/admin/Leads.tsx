@@ -31,12 +31,31 @@ import { leadsStore, type Lead, type LeadStatus } from "@/lib/leads";
 const statusColors: Record<LeadStatus, string> = {
   new: "bg-primary/15 text-primary",
   contacted: "bg-gold/20 text-gold-foreground",
-  converted: "bg-green-500/15 text-green-700 dark:text-green-400",
+  converted: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400",
+  registered: "bg-blue-500/15 text-blue-700 dark:text-blue-400",
+  enrolled: "bg-green-500/15 text-green-700 dark:text-green-400",
+  declined: "bg-muted text-muted-foreground",
 };
+
+const itemClass =
+  "bg-white text-[#1B4D3E] data-[highlighted]:bg-[#F5ECD7] data-[highlighted]:text-[#1B4D3E] data-[state=checked]:bg-[#C9922A] data-[state=checked]:text-[#1B1100] data-[state=checked]:[&_svg]:text-[#1B1100]";
 
 const Leads = () => {
   const leads = useLeads();
   const [selected, setSelected] = useState<Lead | null>(null);
+
+  const handleStatusChange = (leadId: string, status: LeadStatus) => {
+    const { assignedRollNumber } = leadsStore.updateStatus(leadId, status);
+    if (assignedRollNumber) {
+      alert(`Roll number ${assignedRollNumber} assigned successfully`);
+    }
+  };
+
+  const rollDisplayClass = (l: Lead) => {
+    if (!l.rollNumber) return null;
+    if (l.status === "enrolled") return "font-bold text-[#C9922A]";
+    return "font-semibold text-[#7A8C7E]";
+  };
 
   return (
     <div className="space-y-6 max-w-6xl">
@@ -67,6 +86,7 @@ const Leads = () => {
                   <TableHead className="hidden md:table-cell">Message</TableHead>
                   <TableHead>Date</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Roll No</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -85,17 +105,27 @@ const Leads = () => {
                     <TableCell>
                       <Select
                         value={l.status}
-                        onValueChange={(v) => leadsStore.updateStatus(l.id, v as LeadStatus)}
+                        onValueChange={(v) => handleStatusChange(l.id, v as LeadStatus)}
                       >
-                        <SelectTrigger className="h-8 w-[130px]">
+                        <SelectTrigger className="h-8 min-w-[140px] w-[140px] sm:w-auto">
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="new">New</SelectItem>
-                          <SelectItem value="contacted">Contacted</SelectItem>
-                          <SelectItem value="converted">Converted</SelectItem>
+                        <SelectContent className="bg-white text-[#1B4D3E]">
+                          <SelectItem value="new" className={itemClass}>New</SelectItem>
+                          <SelectItem value="contacted" className={itemClass}>Contacted</SelectItem>
+                          <SelectItem value="converted" className={itemClass}>Converted</SelectItem>
+                          <SelectItem value="registered" className={itemClass}>Registered</SelectItem>
+                          <SelectItem value="enrolled" className={itemClass}>Enrolled</SelectItem>
+                          <SelectItem value="declined" className={itemClass}>Declined</SelectItem>
                         </SelectContent>
                       </Select>
+                    </TableCell>
+                    <TableCell>
+                      {l.rollNumber ? (
+                        <span className={rollDisplayClass(l) ?? ""}>{l.rollNumber}</span>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
                     </TableCell>
                     <TableCell className="text-right">
                       <Button
