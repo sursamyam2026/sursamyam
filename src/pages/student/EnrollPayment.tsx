@@ -4,28 +4,23 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import type { EnrollCheckoutState } from "@/pages/student/EnrollStart";
+import {
+  CONVENIENCE_FEE_RUPEES,
+  formatRupee,
+  getCourse,
+} from "@/lib/fees-courses";
+import { EnrollmentTermsContent } from "@/content/enrollment-terms";
 import { finalizeEnrollmentCheckout } from "@/lib/leads";
-
-const CONVENIENCE_FEE_RUPEES = 150;
-
-function formatRupee(n: number): string {
-  return `₹${n.toLocaleString("en-IN")}`;
-}
-
-// Parse course name: "Adults - Shadaj" or "Kids - Gandhar"
-function parseCourse(courseName: string): { track: string; name: string } {
-  const parts = courseName.split(" - ");
-  return { track: parts[0]?.toLowerCase() ?? "adults", name: parts[1] ?? courseName };
-}
-
-const coursePricing: Record<string, { monthly: number; registration: number }> = {
-  "Shadaj": { monthly: 4000, registration: 1000 },
-  "Pancham": { monthly: 2000, registration: 1000 },
-  "Gandhar": { monthly: 4000, registration: 1000 },
-  "Nishad": { monthly: 2000, registration: 1000 },
-};
 
 const EnrollPayment = () => {
   const location = useLocation();
@@ -35,14 +30,17 @@ const EnrollPayment = () => {
 
   const [agreed, setAgreed] = useState(false);
 
-  if (!state?.email || !state.courseName) {
+  if (!state?.email || !state.courseName || !state.track) {
     return <Navigate to="/student/enroll" replace />;
   }
 
-  const { name: courseShortName } = parseCourse(state.courseName);
-  const pricing = coursePricing[courseShortName] ?? { monthly: 0, registration: 0 };
-  const monthly = pricing.monthly;
-  const registration = pricing.registration;
+  const fc = getCourse(state.track, state.courseName);
+  if (!fc) {
+    return <Navigate to="/student/enroll" replace />;
+  }
+
+  const monthly = fc.monthlyRupee;
+  const registration = fc.registrationRupee;
   const subtotal = monthly + registration;
   const convenience = CONVENIENCE_FEE_RUPEES;
   const grand = subtotal + convenience;
@@ -57,7 +55,7 @@ const EnrollPayment = () => {
       age: state.age,
       city: state.city,
       country: state.country,
-      courseLine: state.courseName,
+      courseLine: `${fc.name} (${state.track === "adults" ? "Adults" : "Kids"})`,
     });
 
     toast({
@@ -73,7 +71,7 @@ const EnrollPayment = () => {
         <Card variant="elevated" className="p-8">
           <button
             type="button"
-            onClick={() => navigate("/fees/new-student")}
+            onClick={() => navigate("/fees/course-details")}
             className="mb-4 text-sm text-[#4A5E52] hover:text-[#C9922A] transition-colors"
           >
             ← Back to Courses
@@ -96,7 +94,7 @@ const EnrollPayment = () => {
           <dl className="space-y-4 text-sm">
             <div className="flex justify-between gap-4 border-b border-[#E8D5A3] pb-3">
               <dt className="text-[#4A5E52]">
-                1 × {state.courseName} <span className="text-muted-foreground">(monthly)</span>
+                1 × {fc.name} <span className="text-muted-foreground">(monthly)</span>
               </dt>
               <dd className="font-medium text-[#1B4D3E]">{formatRupee(monthly)}</dd>
             </div>
@@ -118,7 +116,7 @@ const EnrollPayment = () => {
             </div>
           </dl>
 
-          <div className="mt-8 flex items-center gap-3">
+          <div className="mt-8 flex flex-wrap items-center gap-3">
             <Checkbox
               id="terms"
               checked={agreed}
@@ -127,6 +125,26 @@ const EnrollPayment = () => {
             <Label htmlFor="terms" className="cursor-pointer text-sm leading-snug text-[#4A5E52]">
               I have read and agree to the Terms and Conditions.
             </Label>
+            <Dialog>
+              <DialogTrigger asChild>
+                <button
+                  type="button"
+                  className="text-sm font-medium text-[#C9922A] underline-offset-2 hover:underline"
+                >
+                  View Terms
+                </button>
+              </DialogTrigger>
+              <DialogContent className="max-h-[90vh] max-w-lg border-[#E8D5A3] bg-[#FDF6EC]">
+                <DialogHeader>
+                  <DialogTitle className="font-display text-[#1B4D3E]">
+                    Sur Samyam · Terms and Conditions
+                  </DialogTitle>
+                </DialogHeader>
+                <ScrollArea className="max-h-[65vh] pr-4">
+                  <EnrollmentTermsContent />
+                </ScrollArea>
+              </DialogContent>
+            </Dialog>
           </div>
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row-reverse sm:justify-between">
@@ -142,7 +160,7 @@ const EnrollPayment = () => {
               type="button"
               variant="outline"
               className="w-full sm:w-auto"
-              onClick={() => navigate("/fees/new-student")}
+              onClick={() => navigate("/fees/course-details")}
             >
               Cancel
             </Button>

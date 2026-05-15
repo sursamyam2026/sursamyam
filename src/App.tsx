@@ -6,7 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
-import NewStudent from "./pages/fees/NewStudent";
+import CourseDetails from "./pages/fees/CourseDetails";
 import ExistingStudent from "./pages/fees/ExistingStudent";
 import ExamRegistration from "./pages/fees/ExamRegistration";
 import Dashboard from "./pages/admin/Dashboard";
@@ -28,12 +28,12 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/fees/new-student" element={<NewStudent />} />
-          <Route path="/fees/existing-student" element={<ExistingStudent />} />
-          <Route path="/fees/exam-registration" element={<ExamRegistration />} />
           <Route path="/student/enroll" element={<EnrollStart />} />
           <Route path="/student/enroll/payment" element={<EnrollPayment />} />
           <Route path="/student/enroll/submitted" element={<EnrollSubmitted />} />
+          <Route path="/fees/course-details" element={<CourseDetails />} />
+          <Route path="/fees/existing-student" element={<ExistingStudent />} />
+          <Route path="/fees/exam-registration" element={<ExamRegistration />} />
           <Route
             path="/admin"
             element={

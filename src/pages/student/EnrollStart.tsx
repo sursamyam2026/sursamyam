@@ -1,9 +1,15 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  adultCourses,
+  kidsCourses,
+  type FeeTrack,
+  getCourse,
+} from "@/lib/fees-courses";
 
 export type EnrollCheckoutState = {
   name: string;
@@ -12,36 +18,36 @@ export type EnrollCheckoutState = {
   age: string;
   city: string;
   country: string;
+  track: FeeTrack;
   courseName: string;
 };
 
-const adultCourses = [
-  { name: "Shadaj", monthlyRupee: 4000, registrationRupee: 1000 },
-  { name: "Pancham", monthlyRupee: 2000, registrationRupee: 1000 },
-];
-
-const kidsCourses = [
-  { name: "Gandhar", monthlyRupee: 4000, registrationRupee: 1000 },
-  { name: "Nishad", monthlyRupee: 2000, registrationRupee: 1000 },
-];
-
 const EnrollStart = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [params] = useSearchParams();
 
-  const queryTrack = params.get("track") === "kids" ? "kids" : "adults";
+  const pref = (location.state as Partial<EnrollCheckoutState> | null) ?? {};
+
+  const queryTrack: FeeTrack | null = params.get("track") === "kids" ? "kids" : params.get("track") === "adults" ? "adults" : null;
+  const initialTrack: FeeTrack =
+    (pref.track === "adults" || pref.track === "kids" ? pref.track : null) ?? queryTrack ?? "adults";
   const paramCourse = params.get("course")?.trim() || "";
 
-  const courses = queryTrack === "adults" ? adultCourses : kidsCourses;
-  const defaultCourse = paramCourse && courses.find((c) => c.name === paramCourse) ? paramCourse : courses[0]?.name ?? "";
+  const [name, setName] = useState(pref.name ?? "");
+  const [email, setEmail] = useState(pref.email ?? "");
+  const [phone, setPhone] = useState(pref.phone ?? "");
+  const [age, setAge] = useState(pref.age ?? "");
+  const [city, setCity] = useState(pref.city ?? "");
+  const [country, setCountry] = useState(pref.country ?? "");
+  const [track] = useState<FeeTrack>(initialTrack);
 
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [age, setAge] = useState("");
-  const [city, setCity] = useState("");
-  const [country, setCountry] = useState("");
-  const [courseName, setCourseName] = useState(defaultCourse);
+  const [courseName] = useState(() => {
+    const starter = initialTrack === "adults" ? adultCourses : kidsCourses;
+    if (pref.courseName && getCourse(initialTrack, pref.courseName)) return pref.courseName;
+    if (paramCourse && getCourse(initialTrack, paramCourse)) return paramCourse;
+    return starter[0]?.name ?? "";
+  });
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -49,6 +55,8 @@ const EnrollStart = () => {
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
+    const fc = getCourse(track, courseName);
+    if (!fc) return;
 
     const state: EnrollCheckoutState = {
       name,
@@ -57,7 +65,8 @@ const EnrollStart = () => {
       age,
       city,
       country,
-      courseName: `${queryTrack === "adults" ? "Adults" : "Kids"} - ${courseName}`,
+      track,
+      courseName: fc.name,
     };
     navigate("/student/enroll/payment", { state });
   };
@@ -68,7 +77,7 @@ const EnrollStart = () => {
         <Card variant="elevated" className="p-8 overflow-visible">
           <button
             type="button"
-            onClick={() => navigate("/fees/new-student")}
+            onClick={() => navigate("/fees/course-details")}
             className="mb-4 text-sm text-[#4A5E52] hover:text-[#C9922A] transition-colors"
           >
             ← Back to Courses
@@ -148,22 +157,18 @@ const EnrollStart = () => {
               <div className="space-y-2">
                 <Label>Program</Label>
                 <Input
-                  value={queryTrack === "adults" ? "Adults" : "Kids"}
+                  value={track === "adults" ? "Adults" : "Kids"}
                   disabled
                   className="bg-gray-100 text-[#1B4D3E] cursor-not-allowed"
                 />
               </div>
               <div className="space-y-2">
                 <Label>Course</Label>
-                <select
+                <Input
                   value={courseName}
-                  onChange={(e) => setCourseName(e.target.value)}
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-[#1B4D3E]"
-                >
-                  {courses.map((c) => (
-                    <option key={c.name} value={c.name}>{c.name}</option>
-                  ))}
-                </select>
+                  disabled
+                  className="bg-gray-100 text-[#1B4D3E] cursor-not-allowed"
+                />
               </div>
             </div>
 

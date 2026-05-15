@@ -27,8 +27,8 @@ const teachers = [
     image: teacherImage,
     imageAlt: "Singing teacher portrait",
     overlayBadges: [
-      { label: "Passionate", icon: Heart, className: "bg-primary/90 text-primary-foreground" },
-      { label: "Ever-Learning", icon: GraduationCap, className: "bg-gold/90 text-foreground" },
+      { label: "Passionate", icon: Heart, className: "border border-[#C9922A] bg-[#FDF6EC] text-[#C9922A]" },
+      { label: "Ever-Learning", icon: GraduationCap, className: "border border-[#C9922A] bg-[#FDF6EC] text-[#C9922A]" },
     ],
     statBadges: ["10+ Years Practice", "100+ Students", "Beginner Friendly"],
   },
@@ -45,17 +45,17 @@ const teachers = [
 
 const TeacherSection = () => {
   return (
-    <section id="teacher" className="py-16 lg:py-24 bg-gradient-to-b from-muted/30 to-background">
+    <section id="teacher" className="scroll-mt-[100px] bg-[#FDF6EC] px-8 py-20">
       <div className="container mx-auto px-4">
         <div className="mx-auto max-w-[880px]">
           <div className="mb-12 text-center">
-            <span className="inline-block px-4 py-1 rounded-full bg-secondary/10 text-secondary text-sm font-medium mb-4">
+            <span className="mb-4 inline-block rounded-full border border-[#C9922A] bg-[#F5ECD7] px-4 py-1 text-[0.8rem] font-medium text-[#5C3A00]">
               Your Guide
             </span>
             <h2 className="font-display text-3xl md:text-4xl lg:text-5xl font-bold text-foreground">
               Meet Your Teachers
             </h2>
-            <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground">
+            <p className="mx-auto mt-6 max-w-2xl text-lg text-[#4A5E52]">
               Two passionate guides, one shared love for music
             </p>
           </div>
@@ -96,12 +96,12 @@ function TeacherCard({
   };
 }) {
   return (
-    <div className="box-border flex h-auto min-w-0 w-full max-w-[420px] flex-1 flex-col rounded-2xl border-[1.5px] border-[#C9922A] bg-[#1B4D3E] p-4 md:basis-0">
-      <div className="relative mb-3 h-[260px] w-full overflow-hidden rounded-[10px]">
+    <div className="box-border flex h-auto min-w-0 w-full max-w-[420px] flex-1 flex-col rounded-[12px] border-[1.5px] border-[#C9922A] bg-white p-5 md:basis-0">
+      <div className="relative mb-3 h-[300px] w-full overflow-hidden rounded-[10px] border-2 border-[#C9922A]">
         <img
           src={teacher.image}
           alt={teacher.imageAlt}
-          className="block h-full w-full rounded-[10px] border-2 border-[#C9922A] object-cover object-top"
+          className="block h-full w-full object-cover object-top"
         />
         {teacher.overlayBadges.length > 0 && (
           <div className="absolute bottom-4 left-4 right-4 flex flex-wrap gap-2">
@@ -118,9 +118,9 @@ function TeacherCard({
         )}
       </div>
 
-      <h3 className="mb-[0.4rem] text-[1.2rem] font-bold text-foreground">{teacher.name}</h3>
+      <h3 className="mb-[0.4rem] text-[1.2rem] font-bold text-[#1B4D3E]">{teacher.name}</h3>
       <p className="mb-2.5 text-[0.9rem] italic text-[#C9922A]">{teacher.role}</p>
-      <p className="mb-3 text-[0.875rem] leading-relaxed text-muted-foreground">{teacher.bio}</p>
+      <p className="mb-3 text-[0.875rem] leading-relaxed text-[#4A5E52]">{teacher.bio}</p>
 
       <div className="mb-4 flex flex-wrap gap-2">
         {teacher.statBadges.map((badge) => (
@@ -133,7 +133,7 @@ function TeacherCard({
         ))}
       </div>
 
-      <Button variant="warm" size="lg" className="mt-auto w-full" asChild>
+      <Button variant="warm" size="lg" className="mt-auto w-full text-[#1B1100]" asChild>
         <a href="#contact">Schedule a Chat</a>
       </Button>
     </div>

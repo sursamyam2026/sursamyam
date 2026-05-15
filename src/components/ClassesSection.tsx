@@ -98,24 +98,24 @@ const ClassesSection = () => {
   const activeClasses = classesByGroup[ageGroup];
 
   return (
-    <section id="classes" className="scroll-mt-20 py-16 lg:py-24 bg-gradient-to-b from-background to-muted/20">
+    <section id="classes" className="scroll-mt-[100px] bg-[#FDF6EC] px-8 pt-16 pb-20">
       <div className="container mx-auto px-4">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
-            <span className="inline-block px-4 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
+            <span className="mb-4 inline-block rounded-full border border-[#C9922A] bg-[#F5ECD7] px-4 py-1 text-[0.8rem] font-medium text-[#5C3A00]">
               Classes
             </span>
             <h2 className="font-display text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-6">
               Find Your Perfect Learning Path
             </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            <p className="mx-auto max-w-2xl text-lg text-[#4A5E52]">
               Tailored programs for every age — choose the experience that fits you best.
             </p>
           </div>
 
           {/* Age Group Tabs */}
           <div className="flex justify-center mb-12">
-            <div role="tablist" aria-label="Age group" className="flex flex-row flex-wrap justify-center gap-5">
+            <div role="tablist" aria-label="Age group" className="flex flex-row flex-wrap justify-center gap-5 rounded-full bg-[#F5ECD7] p-1">
               {tabs.map((tab) => {
                 const active = ageGroup === tab.value;
                 const TabIcon = tab.icon;
@@ -127,23 +127,23 @@ const ClassesSection = () => {
                     aria-selected={active}
                     onClick={() => setAgeGroup(tab.value)}
                     className={cn(
-                      "flex h-[90px] w-[180px] sm:w-[200px] flex-col items-center justify-center rounded-[24px] border text-center transition-all duration-300 ease-out",
+                      "flex w-[160px] flex-col items-center justify-center rounded-[24px] border-[1.5px] px-4 py-3 text-center transition-all duration-300 ease-out",
                       active
-                        ? "scale-105 border-[#C9922A] bg-[#C9922A] text-[#1B4D3E] shadow-[0_14px_30px_-12px_rgba(201,146,42,0.75)]"
-                        : "border-[#C9922A] bg-[#1B4D3E] text-[#F8F3E7] opacity-75 hover:opacity-90",
+                        ? "scale-105 border-transparent bg-[#C9922A] text-[#1B1100] shadow-[0_14px_30px_-12px_rgba(201,146,42,0.75)]"
+                        : "border-[#C9922A] bg-white text-[#1B4D3E] hover:bg-white",
                     )}
                   >
                     <TabIcon
                       className={cn(
                         "mb-2 h-5 w-5 transition-colors duration-300",
-                        active ? "text-[#1B4D3E]" : "text-[#E0B765]",
+                        active ? "text-[#1B1100]" : "text-[#1B4D3E]",
                       )}
                     />
-                    <span className="text-base font-semibold leading-none">{tab.label}</span>
+                    <span className="text-[0.95rem] font-semibold leading-none">{tab.label}</span>
                     <span
                       className={cn(
-                        "mt-2 text-sm leading-none transition-colors duration-300",
-                        active ? "text-[#1B4D3E]/80" : "text-[#E0B765]",
+                        "mt-2 text-[0.75rem] leading-none transition-colors duration-300",
+                        active ? "text-[#1B1100]/80" : "text-[#1B4D3E]",
                       )}
                     >
                       {tab.sub}
@@ -162,7 +162,7 @@ const ClassesSection = () => {
                 <Card
                   key={classType.title}
                   variant={classType.featured ? "featured" : "elevated"}
-                  className="relative overflow-hidden"
+                  className="relative overflow-hidden bg-white"
                 >
                   {classType.badge && BadgeIcon && (
                     <div className="absolute top-4 right-4">
@@ -173,24 +173,24 @@ const ClassesSection = () => {
                     </div>
                   )}
                   <CardHeader className="pb-4">
-                    <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
-                      <classType.icon className="w-7 h-7 text-primary" />
+                    <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#F5ECD7]">
+                      <classType.icon className="h-7 w-7 text-[#C9922A]" />
                     </div>
-                    <CardTitle className="text-2xl">{classType.title}</CardTitle>
-                    <CardDescription className="text-base">{classType.description}</CardDescription>
+                    <CardTitle className="text-2xl text-[#1B4D3E]">{classType.title}</CardTitle>
+                    <CardDescription className="text-base text-[#4A5E52]">{classType.description}</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <ul className="space-y-3 mb-6">
                       {classType.features.map((feature) => (
-                        <li key={feature} className="flex items-center gap-3 text-muted-foreground">
-                          <div className="w-5 h-5 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0">
-                            <Check className="w-3 h-3 text-accent" />
+                        <li key={feature} className="flex items-center gap-3 text-[#4A5E52]">
+                          <div className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-[#F5ECD7]">
+                            <Check className="h-3 w-3 text-[#C9922A]" />
                           </div>
                           {feature}
                         </li>
                       ))}
                     </ul>
-                    <Button variant="hero" className="w-full" asChild>
+                    <Button variant="hero" className="w-full text-[#1B1100]" asChild>
                       <a href="#contact">Learn More</a>
                     </Button>
                   </CardContent>
@@ -199,39 +199,40 @@ const ClassesSection = () => {
             })}
           </div>
 
-          {/* Learning Formats */}
-          <div className="text-center mb-10">
-            <h3 className="font-display text-2xl md:text-3xl font-bold text-foreground mb-4">
-              Choose Your Format
-            </h3>
-            <p className="text-muted-foreground">
-              Both individual and group sessions are available in these formats
-            </p>
-          </div>
+          <div className="-mx-4 mt-4 bg-[#FDF6EC] px-4 py-16 sm:rounded-[32px]">
+            <div className="text-center mb-10">
+              <h3 className="font-display text-2xl md:text-3xl font-bold text-foreground mb-4">
+                Choose Your Format
+              </h3>
+              <p className="text-[#4A5E52]">
+                Both individual and group sessions are available in these formats
+              </p>
+            </div>
 
-          <div className="grid md:grid-cols-2 gap-6">
-            {formats.map((format) => (
-              <Card key={format.title} variant="warm" className="p-6">
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-background flex items-center justify-center flex-shrink-0">
-                    <format.icon className="w-6 h-6 text-primary" />
-                  </div>
-                  <div>
-                    <h4 className="font-display text-xl font-semibold text-foreground mb-2">
-                      {format.title}
-                    </h4>
-                    <p className="text-sm text-muted-foreground mb-4">{format.description}</p>
-                    <div className="flex flex-wrap gap-2">
-                      {format.benefits.map((benefit) => (
-                        <Badge key={benefit} variant="secondary" className="font-normal">
-                          {benefit}
-                        </Badge>
-                      ))}
+            <div className="grid md:grid-cols-2 gap-6">
+              {formats.map((format) => (
+                <Card key={format.title} variant="warm" className="bg-white p-6">
+                  <div className="flex items-start gap-4">
+                    <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-[#F5ECD7]">
+                      <format.icon className="h-6 w-6 text-[#C9922A]" />
+                    </div>
+                    <div>
+                      <h4 className="font-display text-xl font-semibold text-[#1B4D3E] mb-2">
+                        {format.title}
+                      </h4>
+                      <p className="mb-4 text-sm text-[#4A5E52]">{format.description}</p>
+                      <div className="flex flex-wrap gap-2">
+                        {format.benefits.map((benefit) => (
+                          <Badge key={benefit} variant="outline" className="font-normal">
+                            {benefit}
+                          </Badge>
+                        ))}
+                      </div>
                     </div>
                   </div>
-                </div>
-              </Card>
-            ))}
+                </Card>
+              ))}
+            </div>
           </div>
         </div>
       </div>

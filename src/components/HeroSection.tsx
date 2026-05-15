@@ -4,13 +4,13 @@ import heroBg from "@/assets/hero-bg.jpg";
 
 const HeroSection = () => {
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
+    <section className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#FDF6EC] px-8 py-20 pt-20">
       {/* Background Image */}
       <div 
         className="absolute inset-0 bg-cover bg-no-repeat"
         style={{ backgroundImage: `url(${heroBg})`, backgroundPosition: '70% center' }}
       >
-        <div className="absolute inset-0 bg-gradient-to-b from-background/85 via-background/85 to-background" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#FDF6EC]/95 via-[#FDF6EC]/90 to-[#FDF6EC]/95" />
       </div>
 
       {/* Decorative Elements */}
@@ -20,15 +20,15 @@ const HeroSection = () => {
       <div className="container relative z-10 mx-auto px-4 text-center">
         <div className="max-w-4xl mx-auto space-y-8">
           {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/20 border border-primary/30 animate-scale-in">
-            <Sparkles className="w-4 h-4 text-primary brightness-125" />
-            <span className="text-sm font-medium text-primary brightness-125">Begin Your Musical Journey</span>
+          <div className="inline-flex animate-scale-in items-center gap-2 rounded-full border border-[#C9922A] bg-[#F5ECD7] px-4 py-1 text-[0.8rem]">
+            <Sparkles className="h-4 w-4 text-[#5C3A00]" />
+            <span className="text-sm font-medium text-[#5C3A00]">Begin Your Musical Journey</span>
           </div>
 
           {/* Headline */}
-          <h1 className="font-display text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-foreground leading-tight animate-fade-up" style={{ animationDelay: '0.1s' }}>
+          <h1 className="animate-fade-up font-display text-4xl font-bold leading-tight text-[#1B4D3E] sm:text-5xl md:text-6xl lg:text-7xl" style={{ animationDelay: '0.1s' }}>
             Discover the Magic of{" "}
-            <span className="text-gradient">Hindustani</span>{" "}
+            <span className="text-[#C9922A]">Hindustani</span>{" "}
             <span className="relative inline-block">
               Classical Music
               <svg className="absolute -bottom-2 left-0 w-full h-3 text-primary/30" viewBox="0 0 200 12" preserveAspectRatio="none">
@@ -38,14 +38,14 @@ const HeroSection = () => {
           </h1>
 
           {/* Subheadline */}
-          <p className="text-lg md:text-xl text-foreground/90 max-w-2xl mx-auto animate-fade-up" style={{ animationDelay: '0.2s' }}>
+          <p className="mx-auto max-w-2xl animate-fade-up text-lg text-[#4A5E52] md:text-xl" style={{ animationDelay: '0.2s' }}>
             Embark on a soulful journey through ragas and talas. Learn from a passionate teacher 
             who is also a dedicated student of this ancient art form.
           </p>
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center animate-fade-up" style={{ animationDelay: '0.3s' }}>
-            <Button variant="hero" size="lg" asChild>
+            <Button variant="hero" size="lg" className="text-[#1B1100]" asChild>
               <a href="#contact">Book a Trial Class</a>
             </Button>
             <Button variant="outline" size="lg" className="group">
@@ -55,18 +55,18 @@ const HeroSection = () => {
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-3 gap-4 md:gap-8 pt-12 max-w-xl mx-auto animate-fade-up" style={{ animationDelay: '0.4s' }}>
+          <div className="grid grid-cols-3 gap-4 md:gap-8 pt-0 max-w-xl mx-auto animate-fade-up" style={{ animationDelay: '0.4s' }}>
             <div className="text-center">
               <div className="font-display text-3xl md:text-4xl font-bold text-primary">100+</div>
-              <div className="text-sm text-muted-foreground">Happy Students</div>
+              <div className="text-sm text-[#4A5E52]">Happy Students</div>
             </div>
             <div className="text-center">
               <div className="font-display text-3xl md:text-4xl font-bold text-primary">10+</div>
-              <div className="text-sm text-muted-foreground">Years Learning</div>
+              <div className="text-sm text-[#4A5E52]">Years Learning</div>
             </div>
             <div className="text-center">
               <div className="font-display text-3xl md:text-4xl font-bold text-primary">50+</div>
-              <div className="text-sm text-muted-foreground">Ragas Taught</div>
+              <div className="text-sm text-[#4A5E52]">Ragas Taught</div>
             </div>
           </div>
         </div>

@@ -27,6 +27,10 @@ import { Badge } from "@/components/ui/badge";
 import { Eye, Inbox } from "lucide-react";
 import { useLeads } from "@/hooks/use-leads";
 import { leadsStore, type Lead, type LeadStatus } from "@/lib/leads";
+import { useToast } from "@/hooks/use-toast";
+
+const itemClass =
+  "bg-white text-[#1B4D3E] data-[highlighted]:bg-[#F5ECD7] data-[highlighted]:text-[#1B4D3E] data-[state=checked]:bg-[#C9922A] data-[state=checked]:text-[#1B1100] data-[state=checked]:[&_svg]:text-[#1B1100]";
 
 const statusColors: Record<LeadStatus, string> = {
   new: "bg-primary/15 text-primary",
@@ -37,17 +41,27 @@ const statusColors: Record<LeadStatus, string> = {
   declined: "bg-muted text-muted-foreground",
 };
 
-const itemClass =
-  "bg-white text-[#1B4D3E] data-[highlighted]:bg-[#F5ECD7] data-[highlighted]:text-[#1B4D3E] data-[state=checked]:bg-[#C9922A] data-[state=checked]:text-[#1B1100] data-[state=checked]:[&_svg]:text-[#1B1100]";
+const STATUSES: { value: LeadStatus; label: string }[] = [
+  { value: "new", label: "New" },
+  { value: "contacted", label: "Contacted" },
+  { value: "converted", label: "Converted" },
+  { value: "registered", label: "Registered" },
+  { value: "enrolled", label: "Enrolled" },
+  { value: "declined", label: "Declined" },
+];
 
 const Leads = () => {
   const leads = useLeads();
   const [selected, setSelected] = useState<Lead | null>(null);
+  const { toast } = useToast();
 
   const handleStatusChange = (leadId: string, status: LeadStatus) => {
     const { assignedRollNumber } = leadsStore.updateStatus(leadId, status);
     if (assignedRollNumber) {
-      alert(`Roll number ${assignedRollNumber} assigned successfully`);
+      toast({
+        title: `Roll number ${assignedRollNumber} assigned successfully`,
+        className: "border-[#C9922A] bg-[#1B4D3E] text-[#FDF6EC]",
+      });
     }
   };
 
@@ -111,12 +125,11 @@ const Leads = () => {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent className="bg-white text-[#1B4D3E]">
-                          <SelectItem value="new" className={itemClass}>New</SelectItem>
-                          <SelectItem value="contacted" className={itemClass}>Contacted</SelectItem>
-                          <SelectItem value="converted" className={itemClass}>Converted</SelectItem>
-                          <SelectItem value="registered" className={itemClass}>Registered</SelectItem>
-                          <SelectItem value="enrolled" className={itemClass}>Enrolled</SelectItem>
-                          <SelectItem value="declined" className={itemClass}>Declined</SelectItem>
+                          {STATUSES.map((s) => (
+                            <SelectItem key={s.value} value={s.value} className={itemClass}>
+                              {s.label}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </TableCell>

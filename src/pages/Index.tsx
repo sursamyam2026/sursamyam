@@ -10,12 +10,12 @@ import SectionDivider from "@/components/SectionDivider";
 
 const Index = () => {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-[#FDF6EC]">
       <Navbar />
       <main>
         <HeroSection />
         <SectionDivider />
-        <section id="about" className="scroll-mt-20">
+        <section id="about" className="scroll-mt-[100px] bg-[#FDF6EC]">
           <AboutMusicSection />
         </section>
         <SectionDivider />
@@ -23,7 +23,7 @@ const Index = () => {
         <SectionDivider />
         <TeacherSection />
         <SectionDivider />
-        <section id="testimonials" className="scroll-mt-20">
+        <section id="testimonials" className="scroll-mt-[100px] bg-[#FDF6EC]">
           <TestimonialsSection />
         </section>
         <SectionDivider />

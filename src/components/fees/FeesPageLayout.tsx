@@ -1,6 +1,6 @@
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { ReactNode } from "react";
+import { ReactNode, useEffect } from "react";
 
 interface Props {
   eyebrow: string;
@@ -10,10 +10,14 @@ interface Props {
 }
 
 const FeesPageLayout = ({ eyebrow, title, description, children }: Props) => {
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <Navbar />
-      <main className="flex-1 pt-24 lg:pt-32 pb-20">
+      <main id="fees-top" className="scroll-mt-[100px] flex-1 pt-24 lg:pt-32 pb-20">
         <div className="container mx-auto px-4">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-14">

@@ -12,8 +12,8 @@ const Dashboard = () => {
     { label: "New Inquiries", value: newCount, icon: Inbox, color: "text-primary" },
     { label: "Total Leads", value: leads.length, icon: Users, color: "text-gold" },
     {
-      label: "Converted",
-      value: leads.filter((l) => l.status === "converted").length,
+      label: "Enrolled",
+      value: leads.filter((l) => l.status === "enrolled").length,
       icon: Sparkles,
       color: "text-accent-foreground",
     },

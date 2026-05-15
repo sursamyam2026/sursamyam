@@ -1,4 +1,5 @@
 import { Heart, Instagram, Youtube, Mail } from "lucide-react";
+import { Link } from "react-router-dom";
 import logo from "@/assets/logo.jpeg";
 
 const Footer = () => {
@@ -17,10 +18,11 @@ const Footer = () => {
     { href: "#teacher", label: "Your Teacher" },
     { href: "/fees/new-student", label: "Fees" },
     { href: "#contact", label: "Contact" },
+    { href: "/student/enroll", label: "Enroll & pay" },
   ];
 
   return (
-    <footer className="bg-popover text-foreground py-16">
+    <footer className="bg-[#0F2D22] py-16 text-[#D9CDB8]">
       <div className="container mx-auto px-4">
         <div className="max-w-6xl mx-auto">
           <div className="grid md:grid-cols-3 gap-12 mb-12">
@@ -28,9 +30,9 @@ const Footer = () => {
             <div className="space-y-4">
               <div className="flex items-center gap-3">
                 <img src={logo} alt="Sur Samyam" className="w-12 h-12 rounded-full object-cover" />
-                <span className="font-display text-xl font-semibold">Sur Samyam</span>
+                <span className="font-display text-xl font-semibold text-[#C9922A]">Sur Samyam</span>
               </div>
-              <p className="text-foreground/70 text-sm leading-relaxed">
+              <p className="text-sm leading-relaxed text-[#D9CDB8]">
                 Discover the beauty of Hindustani classical music through personalized, 
                 joyful learning experiences designed for beginners.
               </p>
@@ -42,12 +44,21 @@ const Footer = () => {
               <ul className="space-y-2">
                 {quickLinks.map((link) => (
                   <li key={link.href}>
-                    <a 
-                      href={link.href} 
-                      className="text-foreground/70 hover:text-primary transition-colors text-sm"
-                    >
-                      {link.label}
-                    </a>
+                    {link.href.startsWith("/") ? (
+                      <Link
+                        to={link.href}
+                        className="text-sm text-[#D9CDB8] transition-colors hover:text-[#C9922A]"
+                      >
+                        {link.label}
+                      </Link>
+                    ) : (
+                      <a
+                        href={link.href}
+                        className="text-sm text-[#D9CDB8] transition-colors hover:text-[#C9922A]"
+                      >
+                        {link.label}
+                      </a>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -62,13 +73,13 @@ const Footer = () => {
                     key={social.label}
                     href={social.href}
                     aria-label={social.label}
-                    className="w-10 h-10 rounded-full bg-primary/10 hover:bg-primary/20 flex items-center justify-center transition-colors"
+                    className="flex h-10 w-10 items-center justify-center rounded-full bg-[#1B4D3E]/25 text-[#C9922A] transition-colors hover:bg-[#1B4D3E]/45"
                   >
-                    <social.icon className="w-5 h-5" />
+                    <social.icon className="h-5 w-5" />
                   </a>
                 ))}
               </div>
-              <p className="text-foreground/70 text-sm">
+              <p className="text-sm text-[#D9CDB8]">
                 Based in Mumbai, India<br />
                 Teaching globally via online sessions
               </p>
@@ -76,12 +87,12 @@ const Footer = () => {
           </div>
 
           {/* Bottom Bar */}
-          <div className="pt-8 border-t border-primary/20 flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-foreground/50 text-sm">
+          <div className="flex flex-col items-center justify-between gap-4 border-t border-[#1B4D3E] pt-8 md:flex-row">
+            <p className="text-sm text-[#7A8C7E]">
               © {currentYear} Sur Samyam. All rights reserved.
             </p>
-            <p className="text-foreground/50 text-sm flex items-center gap-1">
-              Made with <Heart className="w-4 h-4 text-primary fill-primary" /> for music lovers
+            <p className="flex items-center gap-1 text-sm text-[#7A8C7E]">
+              Made with <Heart className="h-4 w-4 fill-[#C9922A] text-[#C9922A]" /> for music lovers
             </p>
           </div>
         </div>
