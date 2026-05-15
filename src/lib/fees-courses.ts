@@ -20,37 +20,37 @@ export function formatRupee(n: number): string {
 
 export const adultCourses: FeeCourse[] = [
   {
-    name: "Shadaj",
+    name: "One-on-One",
     track: "adults",
     monthlyRupee: 4000,
     registrationRupee: 1000,
-    description: "One-on-One class per week – 1 Hour.",
+    description: "8 classes per month – 1 Hour each.",
     highlight: true,
   },
   {
-    name: "Pancham",
+    name: "Group",
     track: "adults",
     monthlyRupee: 2000,
     registrationRupee: 1000,
-    description: "Two group classes per week – 1 Hour each.",
+    description: "8 classes per month – 1 Hour each.",
   },
 ];
 
 export const kidsCourses: FeeCourse[] = [
   {
-    name: "Gandhar",
+    name: "One-on-One",
     track: "kids",
     monthlyRupee: 4000,
     registrationRupee: 1000,
-    description: "One-on-One class per week – 1 Hour.",
+    description: "8 classes per month – 1 Hour each.",
     highlight: true,
   },
   {
-    name: "Nishad",
+    name: "Group",
     track: "kids",
     monthlyRupee: 2000,
     registrationRupee: 1000,
-    description: "Two group classes per week – 1 Hour each.",
+    description: "8 classes per month – 1 Hour each.",
   },
 ];
 
@@ -73,7 +73,7 @@ export function toCourseCardFormat(c: FeeCourse): Course {
     total: formatRupee(monthlyPlusReg),
     description: c.description,
     highlight: c.highlight,
-    ctaLabel: `Enroll in ${c.name}`,
+    ctaLabel: `Enroll`,
     ctaHref: `/student/enroll?track=${c.track}&course=${encodeURIComponent(c.name)}`,
   };
 }

@@ -18,8 +18,6 @@ const Footer = () => {
     { href: "#teacher", label: "Your Teacher" },
     { href: "/fees/new-student", label: "Fees" },
     { href: "#contact", label: "Contact" },
-    { href: "/student/register", label: "Student Register" },
-    { href: "/student/login", label: "Student Login" },
     { href: "/student/enroll", label: "Enroll & pay" },
   ];
 

@@ -108,7 +108,7 @@ export interface FinalizeEnrollmentInput {
   courseLine: string;
 }
 
-/** Upsert lead and mark registered after demo checkout (Razorpay later). */
+/** Upsert lead and mark registered (admin sets enrolled after payment confirmation). */
 export function finalizeEnrollmentCheckout(input: FinalizeEnrollmentInput): void {
   const leads = read();
   const needle = input.email.trim().toLowerCase();
@@ -127,7 +127,7 @@ export function finalizeEnrollmentCheckout(input: FinalizeEnrollmentInput): void
       name: input.name.trim() || cur.name,
       phone: input.phone.trim() || cur.phone,
       message: cur.message.trim() ? `${cur.message.trim()}\n\n${note}` : note,
-      status: cur.status === "enrolled" ? cur.status : "registered",
+      status: "registered",
     };
   } else {
     leads.unshift({
@@ -195,40 +195,6 @@ const localLeadStore: LeadRepository = {
     leads[index] = updated;
     write(leads);
     return { lead: updated, assignedRollNumber };
-  },
-
-  completeRegistration(email: string): { ok: true } | { ok: false; error: string } {
-    const needle = email.trim().toLowerCase();
-    if (!needle) return { ok: false, error: "Email is required." };
-
-    const leads = read();
-    const match = leads
-      .filter((l) => l.email.trim().toLowerCase() === needle)
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
-
-    if (!match) {
-      return { ok: false, error: "No lead found for this email. Submit the contact form first." };
-    }
-    if (match.status === "registered") {
-      return { ok: true };
-    }
-    if (match.status !== "converted") {
-      return {
-        ok: false,
-        error:
-          match.status === "enrolled"
-            ? "You are already enrolled — sign in to your student account."
-            : "Registration opens after an admin marks your inquiry as Converted.",
-      };
-    }
-
-    const idx = leads.findIndex((l) => l.id === match.id);
-    if (idx === -1) return { ok: false, error: "Lead not found." };
-
-    leads[idx] = { ...match, status: "registered" };
-    write(leads);
-
-    return { ok: true };
   },
 
   remove(id: string) {

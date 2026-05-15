@@ -18,8 +18,7 @@ const sectionLinks = [
 ];
 
 const feesLinks = [
-  { to: "/fees/new-student", label: "New Student" },
-  { to: "/fees/existing-student", label: "Existing Student" },
+  { to: "/fees/course-details", label: "Courses" },
   { to: "/fees/exam-registration", label: "Exam Registration" },
 ];
 
@@ -61,7 +60,7 @@ const Navbar = () => {
 
             <DropdownMenu>
               <DropdownMenuTrigger className={`${linkClass} flex items-center gap-1 outline-none`}>
-                Fees <ChevronDown className="h-4 w-4 text-[#1B4D3E]" />
+                Registration <ChevronDown className="h-4 w-4 text-[#1B4D3E]" />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-56 border-[#E8D5A3] bg-[#FDF6EC] text-[#1B4D3E]">
                 {feesLinks.map((l) => (
@@ -115,7 +114,7 @@ const Navbar = () => {
                 onClick={() => setMobileFeesOpen((v) => !v)}
                 className="flex items-center justify-between py-2 font-medium text-[#1B4D3E] transition-colors hover:text-[#C9922A]"
               >
-                Fees
+                Registration
                 <ChevronDown
                   className={`h-4 w-4 text-[#1B4D3E] transition-transform ${
                     mobileFeesOpen ? "rotate-180" : ""

@@ -38,17 +38,17 @@ const ExistingStudent = () => {
   const [rollError, setRollError] = useState<string | null>(null);
   const [resolvedCourse, setResolvedCourse] = useState<{ name: string; monthlyFee: number } | null>(null);
 
-  // Lazily compute initial course for logged-in users
-  const [sessionCourse] = useState(() => session ? lookupCourse(session.email) : null);
+  // Logged-in: resolve course once
+  const [sessionCourse] = useState(() => (session ? lookupCourse(session.email) : null));
 
   const displayCourse = resolvedCourse || sessionCourse;
 
-  const resolvedRollNumber = session
-    ? leadsStore.findByEmail(session.email)?.rollNumber ?? null
-    : null;
+  const rollNumber = session ? leadsStore.findByEmail(session.email)?.rollNumber ?? null : null;
 
-  const handleRollLookup = (roll: string) => {
-    const trimmed = roll.trim();
+  // Non-logged-in: resolve course when roll input changes
+  const handleRollLookup = () => {
+    if (session) return;
+    const trimmed = rollInput.trim();
     if (!trimmed) {
       setResolvedCourse(null);
       setRollError(null);
@@ -56,20 +56,28 @@ const ExistingStudent = () => {
     }
     const allLeads = leadsStore.list();
     const matched = allLeads.find((l) => l.rollNumber === trimmed);
-    if (!matched) {
+    if (matched) {
+      const course = lookupCourse(matched.email);
+      setResolvedCourse(course || null);
+      setRollError(null);
+    } else {
       setResolvedCourse(null);
       setRollError("Roll number not found.");
-      return;
-    }
-    setRollError(null);
-    const course = lookupCourse(matched.email);
-    if (course) {
-      setResolvedCourse(course);
     }
   };
 
   const handleContinue = () => {
-    // TODO: Wire up Razorpay gateway payment page
+    if (!session) {
+      if (!rollInput.trim()) {
+        setRollError("Please enter your roll number.");
+        return;
+      }
+      handleRollLookup();
+      if (rolledError) return;
+      // TODO: Wire up Razorpay gateway payment page
+      return;
+    }
+    // TODO: Wire up Razorpay gateway payment page for logged-in user
   };
 
   return (
@@ -83,7 +91,7 @@ const ExistingStudent = () => {
           <p className="text-sm text-[#4A5E52]">Your Roll Number</p>
           {session ? (
             <p className="mt-2 text-3xl font-bold text-[#C9922A]">
-              {resolvedRollNumber || "Not assigned yet"}
+              {rollNumber || "Not assigned yet"}
             </p>
           ) : (
             <div className="mt-2 space-y-2">
@@ -91,9 +99,8 @@ const ExistingStudent = () => {
               <Input
                 id="roll-input"
                 value={rollInput}
-                onChange={(e) => { setRollInput(e.target.value); setRollError(null); }}
-                onBlur={(e) => handleRollLookup(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter") handleRollLookup(rollInput); }}
+                onChange={(e) => { setRollInput(e.target.value); setRollError(null); setResolvedCourse(null); }}
+                onBlur={handleRollLookup}
                 placeholder="e.g. SS-2026-001"
                 className="max-w-xs"
               />

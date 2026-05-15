@@ -130,8 +130,8 @@ export const studentAuth = {
       };
     }
     if (lead.status !== "converted") {
-      if (lead.status === "registered" || lead.status === "enrolled") {
-        return { ok: false, error: "Already registered — use Student Login." };
+      if (lead.status === "enrolled") {
+        return { ok: false, error: "Already enrolled — use Student Login." };
       }
       return { ok: false, error: "Registration opens after your inquiry is marked Converted by Sur Samyam." };
     }
@@ -145,11 +145,6 @@ export const studentAuth = {
     };
 
     studentAccountsRepo.create(account);
-    const linked = leadsStore.completeRegistration(trimmedEmail);
-    if (!linked.ok) {
-      studentAccountsRepo.delete(account.id);
-      return { ok: false, error: linked.error };
-    }
 
     studentSessionRepo.setSession({
       studentId: account.id,

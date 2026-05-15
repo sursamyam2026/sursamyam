@@ -1,17 +1,9 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { Link, Navigate, useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { useStudentAuth } from "@/hooks/use-student-auth";
 import {
   adultCourses,
   kidsCourses,
@@ -22,7 +14,6 @@ import {
 export type EnrollCheckoutState = {
   name: string;
   email: string;
-  password: string;
   phone: string;
   age: string;
   city: string;
@@ -34,7 +25,6 @@ export type EnrollCheckoutState = {
 const EnrollStart = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { isAuthenticated } = useStudentAuth();
   const [params] = useSearchParams();
 
   const pref = (location.state as Partial<EnrollCheckoutState> | null) ?? {};
@@ -46,14 +36,13 @@ const EnrollStart = () => {
 
   const [name, setName] = useState(pref.name ?? "");
   const [email, setEmail] = useState(pref.email ?? "");
-  const [password, setPassword] = useState(pref.password ?? "");
   const [phone, setPhone] = useState(pref.phone ?? "");
   const [age, setAge] = useState(pref.age ?? "");
   const [city, setCity] = useState(pref.city ?? "");
   const [country, setCountry] = useState(pref.country ?? "");
-  const [track, setTrack] = useState<FeeTrack>(initialTrack);
+  const [track] = useState<FeeTrack>(initialTrack);
 
-  const [courseName, setCourseName] = useState(() => {
+  const [courseName] = useState(() => {
     const starter = initialTrack === "adults" ? adultCourses : kidsCourses;
     if (pref.courseName && getCourse(initialTrack, pref.courseName)) return pref.courseName;
     if (paramCourse && getCourse(initialTrack, paramCourse)) return paramCourse;
@@ -61,16 +50,8 @@ const EnrollStart = () => {
   });
 
   useEffect(() => {
-    const list = track === "adults" ? adultCourses : kidsCourses;
-    const ok = list.some((c) => c.name === courseName);
-    if (!ok && list[0]) {
-      setCourseName(list[0].name);
-    }
-  }, [track, courseName]);
-
-  if (isAuthenticated) {
-    return <Navigate to="/student/dashboard" replace />;
-  }
+    window.scrollTo(0, 0);
+  }, []);
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -80,7 +61,6 @@ const EnrollStart = () => {
     const state: EnrollCheckoutState = {
       name,
       email,
-      password,
       phone,
       age,
       city,
@@ -92,9 +72,16 @@ const EnrollStart = () => {
   };
 
   return (
-    <div className="min-h-screen bg-muted/30 px-4 py-10">
+    <div className="min-h-screen bg-muted/30 px-4 py-10 overflow-hidden">
       <div className="mx-auto max-w-lg">
-        <Card variant="elevated" className="p-8">
+        <Card variant="elevated" className="p-8 overflow-visible">
+          <button
+            type="button"
+            onClick={() => navigate("/fees/course-details")}
+            className="mb-4 text-sm text-[#4A5E52] hover:text-[#C9922A] transition-colors"
+          >
+            ← Back to Courses
+          </button>
           <h1 className="font-display text-2xl font-bold text-[#1B4D3E] mb-2">Enroll · Your details</h1>
           <p className="text-sm text-muted-foreground mb-6">
             Enter your information, then continue to review payment breakdown and terms.
@@ -164,63 +151,31 @@ const EnrollStart = () => {
                   required
                 />
               </div>
-              <div className="space-y-2 sm:col-span-2">
-                <Label htmlFor="enroll-password">Choose a password</Label>
-                <Input
-                  id="enroll-password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  autoComplete="new-password"
-                  required
-                />
-              </div>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label>Program</Label>
-                <Select
-                  value={track}
-                  onValueChange={(v) => setTrack(v as FeeTrack)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-[#FDF6EC] text-[#1B4D3E] border-[#E8D5A3]">
-                    <SelectItem value="adults">Adults</SelectItem>
-                    <SelectItem value="kids">Kids</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Input
+                  value={track === "adults" ? "Adults" : "Kids"}
+                  disabled
+                  className="bg-gray-100 text-[#1B4D3E] cursor-not-allowed"
+                />
               </div>
               <div className="space-y-2">
                 <Label>Course</Label>
-                <Select value={courseName} onValueChange={setCourseName}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Pick a course" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-[#FDF6EC] text-[#1B4D3E] border-[#E8D5A3]">
-                    {(track === "adults" ? adultCourses : kidsCourses).map((c) => (
-                      <SelectItem key={c.name} value={c.name}>
-                        {c.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Input
+                  value={courseName}
+                  disabled
+                  className="bg-gray-100 text-[#1B4D3E] cursor-not-allowed"
+                />
               </div>
             </div>
 
             <Button type="submit" variant="hero" className="w-full mt-4">
-              Continue to payment
+              Continue
             </Button>
           </form>
-
-          <p className="mt-6 text-center text-xs text-muted-foreground">
-            Already have an account?{" "}
-            <Link className="text-primary hover:underline" to="/student/login">
-              Student login
-            </Link>
-          </p>
         </Card>
       </div>
     </div>

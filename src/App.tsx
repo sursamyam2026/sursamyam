@@ -2,23 +2,20 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
-import NewStudent from "./pages/fees/NewStudent";
+import CourseDetails from "./pages/fees/CourseDetails";
 import ExistingStudent from "./pages/fees/ExistingStudent";
 import ExamRegistration from "./pages/fees/ExamRegistration";
 import Dashboard from "./pages/admin/Dashboard";
 import Leads from "./pages/admin/Leads";
 import { AdminLayout } from "./components/admin/AdminLayout";
 import { ProtectedRoute } from "./components/admin/ProtectedRoute";
-import { StudentProtectedRoute } from "./components/student/StudentProtectedRoute";
-import StudentLogin from "./pages/student/StudentLogin";
-import StudentRegister from "./pages/student/StudentRegister";
-import StudentDashboard from "./pages/student/StudentDashboard";
 import EnrollStart from "./pages/student/EnrollStart";
 import EnrollPayment from "./pages/student/EnrollPayment";
+import EnrollSubmitted from "./pages/student/EnrollSubmitted";
 
 const queryClient = new QueryClient();
 
@@ -31,19 +28,10 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/student/login" element={<StudentLogin />} />
-          <Route path="/student/register" element={<StudentRegister />} />
           <Route path="/student/enroll" element={<EnrollStart />} />
           <Route path="/student/enroll/payment" element={<EnrollPayment />} />
-          <Route
-            path="/student/dashboard"
-            element={
-              <StudentProtectedRoute>
-                <StudentDashboard />
-              </StudentProtectedRoute>
-            }
-          />
-          <Route path="/fees/new-student" element={<NewStudent />} />
+          <Route path="/student/enroll/submitted" element={<EnrollSubmitted />} />
+          <Route path="/fees/course-details" element={<CourseDetails />} />
           <Route path="/fees/existing-student" element={<ExistingStudent />} />
           <Route path="/fees/exam-registration" element={<ExamRegistration />} />
           <Route

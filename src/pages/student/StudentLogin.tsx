@@ -83,9 +83,9 @@ const StudentLogin = () => {
         </form>
 
         <p className="mt-6 text-sm text-muted-foreground text-center">
-          Need an account?{" "}
-          <Link to="/student/register" className="text-primary hover:underline">
-            Register here
+          New student?{" "}
+          <Link to="/student/enroll" className="text-primary hover:underline">
+            Enroll now
           </Link>
         </p>
       </Card>

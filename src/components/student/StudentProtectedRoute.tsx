@@ -1,12 +1,10 @@
-import { Navigate, useLocation } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 import { useStudentAuth } from "@/hooks/use-student-auth";
 
 export const StudentProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated } = useStudentAuth();
-  const location = useLocation();
-
   if (!isAuthenticated) {
-    return <Navigate to="/student/login" state={{ from: location.pathname }} replace />;
+    return <Navigate to="/student/enroll" replace />;
   }
 
   return <>{children}</>;

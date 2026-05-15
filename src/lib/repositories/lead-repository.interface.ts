@@ -8,7 +8,6 @@ export interface LeadRepository {
     id: string,
     status: LeadStatus,
   ): { lead?: Lead; assignedRollNumber?: string };
-  completeRegistration(email: string): { ok: true } | { ok: false; error: string };
   remove(id: string): void;
   findByEmail(email: string): Lead | null;
   subscribe(cb: () => void): () => void;

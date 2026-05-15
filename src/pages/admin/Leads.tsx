@@ -36,7 +36,7 @@ const statusColors: Record<LeadStatus, string> = {
   new: "bg-primary/15 text-primary",
   contacted: "bg-gold/20 text-gold-foreground",
   converted: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400",
-  registered: "bg-blue-500/10 text-blue-800 dark:text-blue-300",
+  registered: "bg-blue-500/15 text-blue-700 dark:text-blue-400",
   enrolled: "bg-green-500/15 text-green-700 dark:text-green-400",
   declined: "bg-muted text-muted-foreground",
 };

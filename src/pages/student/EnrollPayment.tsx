@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Navigate, useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, Navigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -13,7 +13,6 @@ import {
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
-import { useStudentAuth } from "@/hooks/use-student-auth";
 import type { EnrollCheckoutState } from "@/pages/student/EnrollStart";
 import {
   CONVENIENCE_FEE_RUPEES,
@@ -21,21 +20,17 @@ import {
   getCourse,
 } from "@/lib/fees-courses";
 import { EnrollmentTermsContent } from "@/content/enrollment-terms";
+import { finalizeEnrollmentCheckout } from "@/lib/leads";
 
 const EnrollPayment = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { isAuthenticated, completeEnrollmentCheckout } = useStudentAuth();
   const state = location.state as EnrollCheckoutState | null | undefined;
 
   const [agreed, setAgreed] = useState(false);
 
-  if (isAuthenticated) {
-    return <Navigate to="/student/dashboard" replace />;
-  }
-
-  if (!state?.email || !state.password || !state.courseName || !state.track) {
+  if (!state?.email || !state.courseName || !state.track) {
     return <Navigate to="/student/enroll" replace />;
   }
 
@@ -52,48 +47,49 @@ const EnrollPayment = () => {
 
   const handleNext = () => {
     if (!agreed) return;
-    const demoAt = new Date().toISOString();
-    const payment = {
-      courseName: fc.name,
-      track: state.track,
-      monthlyRupee: monthly,
-      registrationRupee: registration,
-      convenienceRupee: convenience,
-      grandTotalRupee: grand,
-      demoCompletedAt: demoAt,
-      paymentStatus: "demo_completed" as const,
-    };
 
-    const result = completeEnrollmentCheckout({
-      name: state.name,
+    finalizeEnrollmentCheckout({
       email: state.email,
-      password: state.password,
+      name: state.name,
       phone: state.phone,
       age: state.age,
       city: state.city,
       country: state.country,
-      track: state.track,
-      courseName: fc.name,
-      payment,
+      courseLine: `${fc.name} (${state.track === "adults" ? "Adults" : "Kids"})`,
     });
-
-    if (!result.ok) {
-      toast({ title: "Could not enroll", description: result.error });
-      return;
-    }
 
     toast({
       title: "Enrollment submitted",
-      description: "Demo checkout complete. Payment gateway can be wired to this step next.",
+      description: "Your enrollment request has been submitted successfully.",
     });
-    navigate("/student/dashboard", { replace: true });
+    navigate("/student/enroll/submitted", { replace: true });
   };
 
   return (
     <div className="min-h-screen bg-muted/30 px-4 py-10">
       <div className="mx-auto max-w-lg space-y-6">
         <Card variant="elevated" className="p-8">
+          <button
+            type="button"
+            onClick={() => navigate("/fees/course-details")}
+            className="mb-4 text-sm text-[#4A5E52] hover:text-[#C9922A] transition-colors"
+          >
+            ← Back to Courses
+          </button>
           <h1 className="font-display text-2xl font-bold text-[#1B4D3E] mb-6">Payment summary</h1>
+
+          {/* Student details */}
+          <div className="mb-6 rounded-lg bg-[#FDF6EC] border border-[#E8D5A3] p-4 text-sm space-y-1.5">
+            <p className="text-[#4A5E52]">
+              <span className="text-[#1B4D3E] font-medium">Student Name</span> : {state.name}
+            </p>
+            <p className="text-[#4A5E52]">
+              <span className="text-[#1B4D3E] font-medium">Email Address</span> : {state.email}
+            </p>
+            <p className="text-[#4A5E52]">
+              <span className="text-[#1B4D3E] font-medium">Mobile Number</span> : {state.phone}
+            </p>
+          </div>
 
           <dl className="space-y-4 text-sm">
             <div className="flex justify-between gap-4 border-b border-[#E8D5A3] pb-3">
@@ -158,17 +154,13 @@ const EnrollPayment = () => {
               disabled={!agreed}
               onClick={handleNext}
             >
-              Next
+              Submit
             </Button>
             <Button
               type="button"
               variant="outline"
               className="w-full sm:w-auto"
-              onClick={() =>
-                navigate("/student/enroll", {
-                  state,
-                })
-              }
+              onClick={() => navigate("/fees/course-details")}
             >
               Cancel
             </Button>
