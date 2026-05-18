@@ -1,10 +1,12 @@
 import { Card } from "@/components/ui/card";
+import { useExamRegistrations } from "@/hooks/use-exam-registrations";
 import { useLeads } from "@/hooks/use-leads";
 import { Inbox, Users, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const Dashboard = () => {
   const leads = useLeads();
+  const examRegistrations = useExamRegistrations();
   const newCount = leads.filter((l) => l.status === "new").length;
   const recent = leads.slice(0, 5);
 
@@ -12,8 +14,8 @@ const Dashboard = () => {
     { label: "New Inquiries", value: newCount, icon: Inbox, color: "text-primary" },
     { label: "Total Leads", value: leads.length, icon: Users, color: "text-gold" },
     {
-      label: "Enrolled",
-      value: leads.filter((l) => l.status === "enrolled").length,
+      label: "Exam Registrations",
+      value: examRegistrations.length,
       icon: Sparkles,
       color: "text-accent-foreground",
     },

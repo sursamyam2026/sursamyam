@@ -13,6 +13,7 @@ import ExamRegistration from "./pages/fees/ExamRegistration";
 import Dashboard from "./pages/admin/Dashboard";
 import GalleryManager from "./pages/admin/GalleryManager";
 import Leads from "./pages/admin/Leads";
+import ExamRegistrations from "./pages/admin/ExamRegistrations";
 import { AdminLayout } from "./components/admin/AdminLayout";
 import { ProtectedRoute } from "./components/admin/ProtectedRoute";
 import EnrollStart from "./pages/student/EnrollStart";
@@ -55,6 +56,7 @@ const App = () => (
           >
             <Route index element={<Dashboard />} />
             <Route path="leads" element={<Leads />} />
+            <Route path="exam-registrations" element={<ExamRegistrations />} />
             <Route path="gallery" element={<GalleryManager />} />
           </Route>
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
