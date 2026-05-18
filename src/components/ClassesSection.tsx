@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { User, Users, Video, MapPin, Check, Sparkles, Star, Music } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Link } from "react-router-dom";
 
 type AgeGroup = "kids" | "adults";
 
@@ -98,7 +99,7 @@ const ClassesSection = () => {
   const activeClasses = classesByGroup[ageGroup];
 
   return (
-    <section id="classes" className="scroll-mt-[100px] bg-[#FDF6EC] px-8 pt-16 pb-20">
+    <section id="classes" className="scroll-mt-[75px] bg-[#FDF6EC] px-8 pt-16 pb-20">
       <div className="container mx-auto px-4">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
@@ -191,7 +192,7 @@ const ClassesSection = () => {
                       ))}
                     </ul>
                     <Button variant="hero" className="w-full text-[#1B1100]" asChild>
-                      <a href="#contact">Learn More</a>
+                      <Link to="/registration/course-details">Learn More</Link>
                     </Button>
                   </CardContent>
                 </Card>

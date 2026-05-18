@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Users, LogOut, Menu, X, Music } from "lucide-react";
+import { LayoutDashboard, Users, LogOut, Menu, X, Music, ImagePlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 const navItems = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard, end: true },
   { to: "/admin/leads", label: "Leads", icon: Users, end: false },
+  { to: "/admin/gallery", label: "Gallery", icon: ImagePlus, end: false },
 ];
 
 export const AdminLayout = () => {

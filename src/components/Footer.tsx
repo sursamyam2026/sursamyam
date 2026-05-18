@@ -16,9 +16,9 @@ const Footer = () => {
     { href: "#music", label: "The Music" },
     { href: "#classes", label: "Classes" },
     { href: "#teacher", label: "Your Teacher" },
-    { href: "/fees/new-student", label: "Fees" },
+    { href: "/registration/course-details", label: "Courses" },
+    { href: "/registration/exam-registration", label: "Exam Registration" },
     { href: "#contact", label: "Contact" },
-    { href: "/student/enroll", label: "Enroll & pay" },
   ];
 
   return (

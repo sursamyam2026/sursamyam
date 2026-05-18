@@ -34,7 +34,7 @@ const AboutMusicSection = () => {
   ];
 
   return (
-    <section id="music" className="scroll-mt-[100px] bg-[#FDF6EC] px-8 py-20">
+    <section id="music" className="scroll-mt-[75px] bg-[#FDF6EC] px-8 py-20">
       <div className="container mx-auto px-4">
         <div className="max-w-6xl mx-auto">
           {/* Section Header */}

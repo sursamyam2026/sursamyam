@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
-import { Play, Sparkles } from "lucide-react";
+import { Images, Sparkles } from "lucide-react";
 import heroBg from "@/assets/hero-bg.jpg";
+import { Link } from "react-router-dom";
 
 const HeroSection = () => {
   return (
@@ -48,9 +49,11 @@ const HeroSection = () => {
             <Button variant="hero" size="lg" className="text-[#1B1100]" asChild>
               <a href="#contact">Book a Trial Class</a>
             </Button>
-            <Button variant="outline" size="lg" className="group">
-              <Play className="w-5 h-5 group-hover:scale-110 transition-transform" />
-              Watch Introduction
+            <Button variant="outline" size="lg" className="group border-[#C9922A] bg-white/80 text-[#1B4D3E]" asChild>
+              <Link to="/gallery">
+                <Images className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                Gallery
+              </Link>
             </Button>
           </div>
 

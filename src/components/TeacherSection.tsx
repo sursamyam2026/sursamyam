@@ -1,4 +1,3 @@
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Heart, GraduationCap } from "lucide-react";
 import teacherImage from "@/assets/teacher.jpg";
@@ -45,7 +44,7 @@ const teachers = [
 
 const TeacherSection = () => {
   return (
-    <section id="teacher" className="scroll-mt-[100px] bg-[#FDF6EC] px-8 py-20">
+    <section id="teacher" className="scroll-mt-[75px] bg-[#FDF6EC] px-8 py-20">
       <div className="container mx-auto px-4">
         <div className="mx-auto max-w-[880px]">
           <div className="mb-12 text-center">
@@ -132,10 +131,6 @@ function TeacherCard({
           </span>
         ))}
       </div>
-
-      <Button variant="warm" size="lg" className="mt-auto w-full text-[#1B1100]" asChild>
-        <a href="#contact">Schedule a Chat</a>
-      </Button>
     </div>
   );
 }

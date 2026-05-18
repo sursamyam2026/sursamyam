@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X, ChevronDown } from "lucide-react";
 import {
@@ -8,6 +8,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import logo from "@/assets/logo.jpeg";
 
 const sectionLinks = [
@@ -18,18 +26,16 @@ const sectionLinks = [
 ];
 
 const feesLinks = [
-  { to: "/fees/course-details", label: "Courses" },
-  { to: "/fees/exam-registration", label: "Exam Registration" },
+  { to: "/registration/course-details", label: "Courses" },
+  { to: "/registration/exam-registration", label: "Exam Registration" },
 ];
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [mobileFeesOpen, setMobileFeesOpen] = useState(false);
-  const location = useLocation();
-  const onHome = location.pathname === "/";
 
-  const sectionHref = (hash: string) => (onHome ? `#${hash}` : `/#${hash}`);
-  const contactHref = sectionHref("contact");
+  const sectionTo = (hash: string) => ({ pathname: "/", hash: `#${hash}` });
+  const contactTo = sectionTo("contact");
 
   const linkClass =
     "text-[#1B4D3E] hover:text-[#C9922A] font-medium transition-colors relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-[#C9922A] hover:after:w-full after:transition-all";
@@ -39,23 +45,53 @@ const Navbar = () => {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between py-2 min-h-16 lg:min-h-20">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-3 group py-1">
-            <img
-              src={logo}
-              alt="Sur Samyam School of Music"
-              className="h-14 w-14 rounded-full object-cover shadow-md ring-2 ring-primary/40 group-hover:scale-105 transition-transform duration-300"
-            />
-            <span className="font-display text-xl font-bold text-[#C9922A]">
-              Sur Samyam
-            </span>
-          </Link>
+          <div className="flex items-center gap-3 py-1">
+            <Dialog>
+              <DialogTrigger asChild>
+                <button
+                  type="button"
+                  aria-label="View Sur Samyam logo"
+                  className="h-14 w-14 shrink-0 overflow-hidden rounded-full shadow-md ring-2 ring-primary/40 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                >
+                  <img
+                    src={logo}
+                    alt="Sur Samyam School of Music"
+                    className="block h-full w-full object-cover"
+                  />
+                </button>
+              </DialogTrigger>
+              <DialogContent className="max-w-[min(92vw,720px)] border-[#C9922A] bg-[#FDF6EC] p-6 sm:p-8">
+                <DialogHeader className="pr-8 text-center sm:text-center">
+                  <DialogTitle className="font-display text-2xl text-[#1B4D3E]">
+                    Sur Samyam
+                  </DialogTitle>
+                  <DialogDescription className="text-[#4A5E52]">
+                    A closer look at the details and artwork of the school emblem.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="flex justify-center">
+                  <img
+                    src={logo}
+                    alt="Enlarged Sur Samyam School of Music logo"
+                    className="max-h-[70vh] w-full max-w-[560px] rounded-full border-4 border-[#C9922A] object-contain shadow-lg"
+                  />
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            <Link to={{ pathname: "/", hash: "#top" }} className="no-underline">
+              <span className="font-display text-xl font-bold text-[#C9922A]">
+                Sur Samyam
+              </span>
+            </Link>
+          </div>
 
           {/* Desktop Navigation */}
           <div className="hidden lg:flex items-center gap-8">
             {sectionLinks.map((link) => (
-              <a key={link.hash} href={sectionHref(link.hash)} className={linkClass}>
+              <Link key={link.hash} to={sectionTo(link.hash)} className={linkClass}>
                 {link.label}
-              </a>
+              </Link>
             ))}
 
             <DropdownMenu>
@@ -73,15 +109,15 @@ const Navbar = () => {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <a href={contactHref} className={linkClass}>
+            <Link to={contactTo} className={linkClass}>
               Contact
-            </a>
+            </Link>
           </div>
 
           {/* CTA Button */}
           <div className="hidden lg:block">
             <Button variant="hero" size="default" className="text-[#1B1100]" asChild>
-              <a href={contactHref}>Start Learning</a>
+              <Link to={contactTo}>Start Learning</Link>
             </Button>
           </div>
 
@@ -100,14 +136,14 @@ const Navbar = () => {
           <div className="animate-fade-up border-t border-[#E8D5A3] bg-[#FDF6EC] py-4 lg:hidden">
             <div className="flex flex-col gap-4">
               {sectionLinks.map((link) => (
-                <a
+                <Link
                   key={link.hash}
-                  href={sectionHref(link.hash)}
+                  to={sectionTo(link.hash)}
                   className="py-2 font-medium text-[#1B4D3E] transition-colors hover:text-[#C9922A]"
                   onClick={() => setIsOpen(false)}
                 >
                   {link.label}
-                </a>
+                </Link>
               ))}
 
               <button
@@ -136,18 +172,18 @@ const Navbar = () => {
                 </div>
               )}
 
-              <a
-                href={contactHref}
+              <Link
+                to={contactTo}
                 className="py-2 font-medium text-[#1B4D3E] transition-colors hover:text-[#C9922A]"
                 onClick={() => setIsOpen(false)}
               >
                 Contact
-              </a>
+              </Link>
 
               <Button variant="hero" className="mt-2 text-[#1B1100]" asChild>
-                <a href={contactHref} onClick={() => setIsOpen(false)}>
+                <Link to={contactTo} onClick={() => setIsOpen(false)}>
                   Start Learning
-                </a>
+                </Link>
               </Button>
             </div>
           </div>

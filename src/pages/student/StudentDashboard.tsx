@@ -63,7 +63,7 @@ const StudentDashboard = () => {
             <Link to={`/fees/existing-student?email=${qp}`}>Fees — Existing Student</Link>
           </Button>
           <Button variant="outline" asChild>
-            <Link to={`/fees/exam-registration?email=${qp}`}>Exam Registration</Link>
+            <Link to={`/registration/exam-registration?email=${qp}`}>Exam Registration</Link>
           </Button>
           <Button variant="outline" asChild>
             <Link to="/">Home</Link>

@@ -71,7 +71,7 @@ const EnrollPayment = () => {
         <Card variant="elevated" className="p-8">
           <button
             type="button"
-            onClick={() => navigate("/fees/course-details")}
+            onClick={() => navigate("/registration/course-details")}
             className="mb-4 text-sm text-[#4A5E52] hover:text-[#C9922A] transition-colors"
           >
             ← Back to Courses
@@ -160,7 +160,7 @@ const EnrollPayment = () => {
               type="button"
               variant="outline"
               className="w-full sm:w-auto"
-              onClick={() => navigate("/fees/course-details")}
+              onClick={() => navigate("/registration/course-details")}
             >
               Cancel
             </Button>

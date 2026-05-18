@@ -22,7 +22,7 @@ const ContactSection = () => {
     leadsStore.add({
       name: formData.name.trim(),
       email: formData.email.trim(),
-      phone: formData.phone.trim() || undefined,
+      phone: formData.phone.trim(),
       message: formData.message.trim(),
     });
     toast({
@@ -146,24 +146,24 @@ const ContactSection = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="phone" className="text-[#1B4D3E]">Phone Number (Optional)</Label>
+                  <Label htmlFor="phone" className="text-[#1B4D3E]">Phone Number</Label>
                   <Input
                     id="phone"
                     placeholder="Enter your phone number"
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    required
                     className="h-12 border-[#C9922A] bg-white text-[#1B4D3E] placeholder:text-[#4A5E52]"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="message" className="text-[#1B4D3E]">Your Message</Label>
+                  <Label htmlFor="message" className="text-[#1B4D3E]">Your Message (Optional)</Label>
                   <Textarea
                     id="message"
                     placeholder="Tell me about your musical interests, experience level, and what you hope to learn..."
                     value={formData.message}
                     onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                    required
                     className="min-h-[150px] resize-none border-[#C9922A] bg-white text-[#1B4D3E] placeholder:text-[#4A5E52]"
                   />
                 </div>
