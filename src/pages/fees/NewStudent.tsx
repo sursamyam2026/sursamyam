@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import FeesPageLayout from "@/components/fees/FeesPageLayout";
 import CourseCard from "@/components/fees/CourseCard";
 import { Card } from "@/components/ui/card";
@@ -20,8 +21,23 @@ const NewStudent = () => {
     new URLSearchParams(location.search).get("email")?.trim().toLowerCase() ?? "";
   const studentEmail =
     session?.email.trim().toLowerCase() || queryEmail;
-  const studentLead = studentEmail ? leadsStore.findByEmail(studentEmail) : null;
-  const rollNumber = studentLead?.rollNumber;
+  const [rollNumber, setRollNumber] = useState<string | undefined>();
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadLead() {
+      const lead = studentEmail ? await leadsStore.findByEmail(studentEmail) : null;
+      if (!cancelled) {
+        setRollNumber(lead?.rollNumber);
+      }
+    }
+
+    void loadLead();
+    return () => {
+      cancelled = true;
+    };
+  }, [studentEmail]);
 
   return (
     <FeesPageLayout

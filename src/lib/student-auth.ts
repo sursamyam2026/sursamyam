@@ -108,11 +108,11 @@ export const studentAuth = {
     return studentSessionRepo.getSession() !== null;
   },
 
-  register(
+  async register(
     name: string,
     email: string,
     password: string,
-  ): { ok: true } | { ok: false; error: string } {
+  ): Promise<{ ok: true } | { ok: false; error: string }> {
     const trimmedName = name.trim();
     const trimmedEmail = email.trim().toLowerCase();
     const pw = password;
@@ -122,7 +122,7 @@ export const studentAuth = {
     if (studentAccountsRepo.findByEmail(trimmedEmail)) {
       return { ok: false, error: "An account exists for this email. Sign in instead." };
     }
-    const lead = leadsStore.findByEmail(trimmedEmail);
+    const lead = await leadsStore.findByEmail(trimmedEmail);
     if (!lead) {
       return {
         ok: false,
@@ -186,7 +186,7 @@ export const studentAuth = {
    * Self-serve enrollment (Step 2 "Next"): upsert lead → registered + create account + session.
    * Razorpay: replace internals to create order before session; reuse lead upsert post-success.
    */
-  completeEnrollmentCheckout(input: {
+  async completeEnrollmentCheckout(input: {
     name: string;
     email: string;
     password: string;
@@ -197,7 +197,7 @@ export const studentAuth = {
     track: EnrollmentFeeTrack;
     courseName: string;
     payment: EnrollmentPaymentSnapshot;
-  }): { ok: true } | { ok: false; error: string } {
+  }): Promise<{ ok: true } | { ok: false; error: string }> {
     const email = input.email.trim().toLowerCase();
     const pw = input.password;
     if (!email || !pw) {
@@ -207,7 +207,7 @@ export const studentAuth = {
       return { ok: false, error: "An account exists for this email. Sign in to continue." };
     }
 
-    finalizeEnrollmentCheckout({
+    await finalizeEnrollmentCheckout({
       email,
       name: input.name.trim(),
       phone: input.phone.trim(),

@@ -22,10 +22,10 @@ const StudentRegister = () => {
     return <Navigate to="/student/dashboard" replace />;
   }
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
-    const result = register(name.trim(), email.trim(), password);
+    const result = await register(name.trim(), email.trim(), password);
     if (!result.ok) {
       setError(result.error);
       return;

@@ -51,16 +51,25 @@ const STATUSES: { value: LeadStatus; label: string }[] = [
 ];
 
 const Leads = () => {
-  const leads = useLeads();
+  const { leads, isLoading, error, refresh } = useLeads();
   const [selected, setSelected] = useState<Lead | null>(null);
   const { toast } = useToast();
 
-  const handleStatusChange = (leadId: string, status: LeadStatus) => {
-    const { assignedRollNumber } = leadsStore.updateStatus(leadId, status);
-    if (assignedRollNumber) {
+  const handleStatusChange = async (leadId: string, status: LeadStatus) => {
+    try {
+      const { assignedRollNumber } = await leadsStore.updateStatus(leadId, status);
+      if (assignedRollNumber) {
+        toast({
+          title: `Roll number ${assignedRollNumber} assigned successfully`,
+          className: "border-[#C9922A] bg-[#1B4D3E] text-[#FDF6EC]",
+        });
+      }
+      await refresh();
+    } catch (err) {
       toast({
-        title: `Roll number ${assignedRollNumber} assigned successfully`,
-        className: "border-[#C9922A] bg-[#1B4D3E] text-[#FDF6EC]",
+        title: "Unable to update lead",
+        description: err instanceof Error ? err.message : "Please try again.",
+        variant: "destructive",
       });
     }
   };
@@ -76,12 +85,18 @@ const Leads = () => {
       <div>
         <h1 className="font-display text-2xl lg:text-3xl font-bold">Leads</h1>
         <p className="text-muted-foreground mt-1">
-          {leads.length} {leads.length === 1 ? "submission" : "submissions"} in total.
+          {error
+            ? "Unable to load leads."
+            : `${leads.length} ${leads.length === 1 ? "submission" : "submissions"} in total.`}
         </p>
       </div>
 
       <Card variant="default" className="p-0 overflow-hidden">
-        {leads.length === 0 ? (
+        {isLoading ? (
+          <div className="text-center py-16 px-4 text-muted-foreground">
+            <p className="font-medium text-foreground">Loading leads...</p>
+          </div>
+        ) : leads.length === 0 ? (
           <div className="text-center py-16 px-4 text-muted-foreground">
             <Inbox className="w-12 h-12 mx-auto mb-3 opacity-40" />
             <p className="font-medium text-foreground">No leads yet</p>

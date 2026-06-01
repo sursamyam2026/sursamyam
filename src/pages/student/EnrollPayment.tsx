@@ -29,6 +29,7 @@ const EnrollPayment = () => {
   const state = location.state as EnrollCheckoutState | null | undefined;
 
   const [agreed, setAgreed] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!state?.email || !state.courseName || !state.track) {
     return <Navigate to="/student/enroll" replace />;
@@ -45,24 +46,35 @@ const EnrollPayment = () => {
   const convenience = CONVENIENCE_FEE_RUPEES;
   const grand = subtotal + convenience;
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!agreed) return;
 
-    finalizeEnrollmentCheckout({
-      email: state.email,
-      name: state.name,
-      phone: state.phone,
-      age: state.age,
-      city: state.city,
-      country: state.country,
-      courseLine: `${fc.name} (${state.track === "adults" ? "Adults" : "Kids"})`,
-    });
+    setIsSubmitting(true);
+    try {
+      await finalizeEnrollmentCheckout({
+        email: state.email,
+        name: state.name,
+        phone: state.phone,
+        age: state.age,
+        city: state.city,
+        country: state.country,
+        courseLine: `${fc.name} (${state.track === "adults" ? "Adults" : "Kids"})`,
+      });
 
-    toast({
-      title: "Enrollment submitted",
-      description: "Your enrollment request has been submitted successfully.",
-    });
-    navigate("/student/enroll/submitted", { replace: true });
+      toast({
+        title: "Enrollment submitted",
+        description: "Your enrollment request has been submitted successfully.",
+      });
+      navigate("/student/enroll/submitted", { replace: true });
+    } catch (err) {
+      toast({
+        title: "Unable to submit enrollment",
+        description: err instanceof Error ? err.message : "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -151,10 +163,10 @@ const EnrollPayment = () => {
             <Button
               variant="hero"
               className="w-full sm:w-auto"
-              disabled={!agreed}
+              disabled={!agreed || isSubmitting}
               onClick={handleSubmit}
             >
-              Submit
+              {isSubmitting ? "Submitting..." : "Submit"}
             </Button>
             <Button
               type="button"

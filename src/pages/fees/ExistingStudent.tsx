@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import FeesPageLayout from "@/components/fees/FeesPageLayout";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,13 +16,13 @@ function extractCourseFromMessage(msg: string): { name: string; track: FeeTrack 
   return { name: match[1].trim(), track: match[2].toLowerCase() === "kids" ? "kids" : "adults" };
 }
 
-function lookupCourse(email: string): { name: string; monthlyFee: number } | null {
+async function lookupCourse(email: string): Promise<{ name: string; monthlyFee: number } | null> {
   const account = studentAccountsRepo.findByEmail(email);
   const snap = account?.enrollmentSnapshot;
   if (snap) {
     return { name: snap.courseName, monthlyFee: snap.monthlyRupee };
   }
-  const lead = leadsStore.findByEmail(email);
+  const lead = await leadsStore.findByEmail(email);
   const parsed = lead ? extractCourseFromMessage(lead.message) : null;
   if (parsed) {
     const fc = getCourse(parsed.track, parsed.name);
@@ -37,24 +37,46 @@ const ExistingStudent = () => {
   const [rollInput, setRollInput] = useState("");
   const [rollError, setRollError] = useState<string | null>(null);
   const [resolvedCourse, setResolvedCourse] = useState<{ name: string; monthlyFee: number } | null>(null);
+  const [sessionCourse, setSessionCourse] = useState<{ name: string; monthlyFee: number } | null>(null);
+  const [resolvedRollNumber, setResolvedRollNumber] = useState<string | null>(null);
 
-  // Lazily compute initial course for logged-in users
-  const [sessionCourse] = useState(() => session ? lookupCourse(session.email) : null);
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadSessionData() {
+      if (!session) {
+        setSessionCourse(null);
+        setResolvedRollNumber(null);
+        return;
+      }
+
+      const [course, lead] = await Promise.all([
+        lookupCourse(session.email),
+        leadsStore.findByEmail(session.email),
+      ]);
+
+      if (!cancelled) {
+        setSessionCourse(course);
+        setResolvedRollNumber(lead?.rollNumber ?? null);
+      }
+    }
+
+    void loadSessionData();
+    return () => {
+      cancelled = true;
+    };
+  }, [session]);
 
   const displayCourse = resolvedCourse || sessionCourse;
 
-  const resolvedRollNumber = session
-    ? leadsStore.findByEmail(session.email)?.rollNumber ?? null
-    : null;
-
-  const handleRollLookup = (roll: string) => {
+  const handleRollLookup = async (roll: string) => {
     const trimmed = roll.trim();
     if (!trimmed) {
       setResolvedCourse(null);
       setRollError(null);
       return;
     }
-    const allLeads = leadsStore.list();
+    const allLeads = await leadsStore.list();
     const matched = allLeads.find((l) => l.rollNumber === trimmed);
     if (!matched) {
       setResolvedCourse(null);
@@ -62,7 +84,7 @@ const ExistingStudent = () => {
       return;
     }
     setRollError(null);
-    const course = lookupCourse(matched.email);
+    const course = await lookupCourse(matched.email);
     if (course) {
       setResolvedCourse(course);
     }
@@ -92,8 +114,8 @@ const ExistingStudent = () => {
                 id="roll-input"
                 value={rollInput}
                 onChange={(e) => { setRollInput(e.target.value); setRollError(null); }}
-                onBlur={(e) => handleRollLookup(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter") handleRollLookup(rollInput); }}
+                onBlur={(e) => void handleRollLookup(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") void handleRollLookup(rollInput); }}
                 placeholder="e.g. SS-2026-001"
                 className="max-w-xs"
               />

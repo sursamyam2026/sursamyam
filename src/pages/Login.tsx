@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Lock } from "lucide-react";
 
 const Login = () => {
-  const { isAuthenticated, login } = useAuth();
+  const { isAuthenticated, isLoading, login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
@@ -17,19 +17,22 @@ const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const from = (location.state as { from?: string } | null)?.from || "/admin";
 
-  if (isAuthenticated) return <Navigate to={from} replace />;
+  if (!isLoading && isAuthenticated) return <Navigate to={from} replace />;
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
     if (!email.trim() || !password) {
       setError("Email and password are required.");
       return;
     }
-    const result = login(email, password);
+    setIsSubmitting(true);
+    const result = await login(email, password);
+    setIsSubmitting(false);
     if (!result.ok) {
       setError(("error" in result && result.error) || "Login failed.");
       return;
@@ -82,14 +85,10 @@ const Login = () => {
             </p>
           )}
 
-          <Button type="submit" variant="hero" className="w-full">
-            Sign In
+          <Button type="submit" variant="hero" className="w-full" disabled={isSubmitting}>
+            {isSubmitting ? "Signing in..." : "Sign In"}
           </Button>
         </form>
-
-        <p className="mt-6 text-xs text-muted-foreground text-center">
-          Demo credentials: <code>admin@swarshiksha.com</code> / <code>admin123</code>
-        </p>
       </Card>
     </div>
   );

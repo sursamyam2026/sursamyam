@@ -5,7 +5,7 @@ import { Inbox, Users, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const Dashboard = () => {
-  const leads = useLeads();
+  const { leads, isLoading, error } = useLeads();
   const examRegistrations = useExamRegistrations();
   const newCount = leads.filter((l) => l.status === "new").length;
   const recent = leads.slice(0, 5);
@@ -25,7 +25,9 @@ const Dashboard = () => {
     <div className="space-y-6 max-w-6xl">
       <div>
         <h1 className="font-display text-2xl lg:text-3xl font-bold">Dashboard</h1>
-        <p className="text-muted-foreground mt-1">Overview of your inquiries and leads.</p>
+        <p className="text-muted-foreground mt-1">
+          {error ? "Unable to load leads." : "Overview of your inquiries and leads."}
+        </p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -52,7 +54,11 @@ const Dashboard = () => {
           </Link>
         </div>
 
-        {recent.length === 0 ? (
+        {isLoading ? (
+          <div className="text-center py-10 text-muted-foreground">
+            <p className="text-sm">Loading leads...</p>
+          </div>
+        ) : recent.length === 0 ? (
           <div className="text-center py-10 text-muted-foreground">
             <Inbox className="w-10 h-10 mx-auto mb-2 opacity-40" />
             <p className="text-sm">No leads yet. Submissions from the contact form will appear here.</p>
