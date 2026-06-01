@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import {
   adultCourses,
   kidsCourses,
+  type CourseFormat,
   type FeeTrack,
   getCourse,
 } from "@/lib/fees-courses";
@@ -20,6 +21,7 @@ export type EnrollCheckoutState = {
   country: string;
   track: FeeTrack;
   courseName: string;
+  format: CourseFormat;
 };
 
 const EnrollStart = () => {
@@ -33,6 +35,7 @@ const EnrollStart = () => {
   const initialTrack: FeeTrack =
     (pref.track === "adults" || pref.track === "kids" ? pref.track : null) ?? queryTrack ?? "adults";
   const paramCourse = params.get("course")?.trim() || "";
+  const queryFormat: CourseFormat = params.get("format") === "offline" ? "offline" : "online";
 
   const [name, setName] = useState(pref.name ?? "");
   const [email, setEmail] = useState(pref.email ?? "");
@@ -41,6 +44,9 @@ const EnrollStart = () => {
   const [city, setCity] = useState(pref.city ?? "");
   const [country, setCountry] = useState(pref.country ?? "");
   const [track] = useState<FeeTrack>(initialTrack);
+  const [format] = useState<CourseFormat>(
+    pref.format === "offline" || pref.format === "online" ? pref.format : queryFormat,
+  );
 
   const [courseName] = useState(() => {
     const starter = initialTrack === "adults" ? adultCourses : kidsCourses;
@@ -67,6 +73,7 @@ const EnrollStart = () => {
       country,
       track,
       courseName: fc.name,
+      format,
     };
     navigate("/student/enroll/payment", { state });
   };
@@ -153,7 +160,7 @@ const EnrollStart = () => {
               </div>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-4 sm:grid-cols-3">
               <div className="space-y-2">
                 <Label>Program</Label>
                 <Input
@@ -166,6 +173,14 @@ const EnrollStart = () => {
                 <Label>Course</Label>
                 <Input
                   value={courseName}
+                  disabled
+                  className="bg-gray-100 text-[#1B4D3E] cursor-not-allowed"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Format</Label>
+                <Input
+                  value={format === "online" ? "Online" : "Offline"}
                   disabled
                   className="bg-gray-100 text-[#1B4D3E] cursor-not-allowed"
                 />

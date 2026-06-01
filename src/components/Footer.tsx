@@ -14,8 +14,9 @@ const Footer = () => {
   const quickLinks = [
     { href: "#about", label: "About" },
     { href: "#music", label: "The Music" },
-    { href: "#classes", label: "Classes" },
     { href: "#teacher", label: "Your Teacher" },
+    { href: "#classes", label: "Classes" },
+    { href: "/syllabus", label: "Syllabus" },
     { href: "/registration/course-details", label: "Courses" },
     { href: "/registration/exam-registration", label: "Exam Registration" },
     { href: "#contact", label: "Contact" },

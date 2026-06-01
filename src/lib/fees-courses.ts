@@ -1,12 +1,14 @@
 import type { Course } from "@/components/fees/CourseCard";
 
 export type FeeTrack = "adults" | "kids";
+export type CourseFormat = "online" | "offline";
 
 /** Numeric amounts in INR (rupees) for checkout math */
 export interface FeeCourse {
   name: string;
   track: FeeTrack;
   monthlyRupee: number;
+  monthlyRupeeByFormat: Record<CourseFormat, number>;
   registrationRupee: number;
   description: string;
   highlight?: boolean;
@@ -23,6 +25,7 @@ export const adultCourses: FeeCourse[] = [
     name: "One-on-One",
     track: "adults",
     monthlyRupee: 4000,
+    monthlyRupeeByFormat: { online: 4000, offline: 5000 },
     registrationRupee: 1000,
     description: "8 classes per month – 1 Hour each.",
     highlight: true,
@@ -31,6 +34,7 @@ export const adultCourses: FeeCourse[] = [
     name: "Group",
     track: "adults",
     monthlyRupee: 2000,
+    monthlyRupeeByFormat: { online: 2000, offline: 2500 },
     registrationRupee: 1000,
     description: "8 classes per month – 1 Hour each.",
   },
@@ -41,6 +45,7 @@ export const kidsCourses: FeeCourse[] = [
     name: "One-on-One",
     track: "kids",
     monthlyRupee: 4000,
+    monthlyRupeeByFormat: { online: 4000, offline: 5000 },
     registrationRupee: 1000,
     description: "8 classes per month – 1 Hour each.",
     highlight: true,
@@ -49,6 +54,7 @@ export const kidsCourses: FeeCourse[] = [
     name: "Group",
     track: "kids",
     monthlyRupee: 2000,
+    monthlyRupeeByFormat: { online: 2000, offline: 2500 },
     registrationRupee: 1000,
     description: "8 classes per month – 1 Hour each.",
   },
@@ -63,17 +69,30 @@ export function getCourse(track: FeeTrack, name: string): FeeCourse | undefined 
   return list.find((c) => c.name === name);
 }
 
+export function getMonthlyRupee(c: FeeCourse, format: CourseFormat): number {
+  return c.monthlyRupeeByFormat[format] ?? c.monthlyRupee;
+}
+
 /** For existing CourseCard / fees pages */
 export function toCourseCardFormat(c: FeeCourse): Course {
-  const monthlyPlusReg = c.monthlyRupee + c.registrationRupee;
+  const onlineTotal = getMonthlyRupee(c, "online") + c.registrationRupee;
+  const offlineTotal = getMonthlyRupee(c, "offline") + c.registrationRupee;
   return {
     name: c.name,
-    monthly: formatRupee(c.monthlyRupee),
+    monthly: formatRupee(getMonthlyRupee(c, "online")),
+    monthlyByFormat: {
+      online: formatRupee(getMonthlyRupee(c, "online")),
+      offline: formatRupee(getMonthlyRupee(c, "offline")),
+    },
     registration: formatRupee(c.registrationRupee),
-    total: formatRupee(monthlyPlusReg),
+    total: formatRupee(onlineTotal),
+    totalByFormat: {
+      online: formatRupee(onlineTotal),
+      offline: formatRupee(offlineTotal),
+    },
     description: c.description,
     highlight: c.highlight,
-    ctaLabel: `Enroll`,
+    ctaLabel: "Enroll Now",
     ctaHref: `/student/enroll?track=${c.track}&course=${encodeURIComponent(c.name)}`,
   };
 }

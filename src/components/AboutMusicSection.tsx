@@ -34,9 +34,42 @@ const AboutMusicSection = () => {
   ];
 
   return (
-    <section id="music" className="scroll-mt-[75px] bg-[#FDF6EC] px-8 py-20">
-      <div className="container mx-auto px-4">
-        <div className="max-w-6xl mx-auto">
+    <>
+      <div className="bg-[#FDF6EC] px-8 py-20">
+        <div className="container mx-auto px-4">
+          <div className="mx-auto max-w-5xl">
+            <div className="mb-12 text-center">
+              <span className="mb-4 inline-block rounded-full border border-[#C9922A] bg-[#F5ECD7] px-4 py-1 text-[0.8rem] font-medium text-[#5C3A00]">
+                About Us
+              </span>
+              <h2 className="font-display text-3xl md:text-4xl lg:text-5xl font-bold text-foreground">
+                About Sur Samyam School of Music
+              </h2>
+            </div>
+
+            <div className="grid gap-10 lg:grid-cols-[1.45fr_0.9fr] lg:items-start">
+              <div className="space-y-6 text-[#4A5E52]">
+                <p className="text-lg leading-relaxed">
+                  Sur Samyam was born from a deep longing - to keep the soul of Hindustani classical music alive and thriving. More than an academy, we are a sacred space where every student is valued equally and nurtured with wholehearted dedication. Founded by teachers driven by vision and devotion, our mission is to spread the love for this timeless art form. We do not chase numbers - we chase excellence.
+                </p>
+                <p className="leading-relaxed">
+                  Sur Samyam is more than a music school - it is a complete musical home. We offer dedicated guidance for students who wish to appear for classical music examinations, ensuring they are well-prepared and confident. We also believe that true learning comes alive on stage, which is why we create meaningful performance opportunities for our students to showcase their gayaki, build confidence, and experience the joy of sharing music with an audience.
+                </p>
+              </div>
+
+              <Card variant="glass" className="rounded-3xl bg-white p-8">
+                <blockquote className="font-display text-xl italic leading-relaxed text-foreground">
+                  "Our mission is to nurture a deep love for Hindustani classical music by providing every student with equal attention, sincere guidance, and a space to grow."
+                </blockquote>
+              </Card>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <section id="music" className="scroll-mt-[75px] bg-[#FDF6EC] px-8 py-20">
+        <div className="container mx-auto px-4">
+          <div className="max-w-6xl mx-auto">
           {/* Section Header */}
           <div className="text-center mb-16">
             <span className="mb-4 inline-block rounded-full border border-[#C9922A] bg-[#F5ECD7] px-4 py-1 text-[0.8rem] font-medium text-[#5C3A00]">
@@ -109,9 +142,10 @@ const AboutMusicSection = () => {
               </Card>
             ))}
           </div>
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
+    </>
   );
 };
 

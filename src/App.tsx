@@ -2,11 +2,13 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Navigate, Routes, Route } from "react-router-dom";
+import { useEffect } from "react";
+import { BrowserRouter, Navigate, Routes, Route, useLocation } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import Gallery from "./pages/Gallery";
+import Syllabus from "./pages/Syllabus";
 import CourseDetails from "./pages/fees/CourseDetails";
 import ExistingStudent from "./pages/fees/ExistingStudent";
 import ExamRegistration from "./pages/fees/ExamRegistration";
@@ -22,15 +24,29 @@ import EnrollSubmitted from "./pages/student/EnrollSubmitted";
 
 const queryClient = new QueryClient();
 
+const ScrollToTop = () => {
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.hash) return;
+
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [location.key, location.pathname, location.search, location.hash]);
+
+  return null;
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <ScrollToTop />
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/gallery" element={<Gallery />} />
+          <Route path="/syllabus" element={<Syllabus />} />
           <Route path="/login" element={<Login />} />
           <Route path="/student/enroll" element={<EnrollStart />} />
           <Route path="/student/enroll/payment" element={<EnrollPayment />} />

@@ -40,8 +40,7 @@ const HeroSection = () => {
 
           {/* Subheadline */}
           <p className="mx-auto max-w-2xl animate-fade-up text-lg text-[#4A5E52] md:text-xl" style={{ animationDelay: '0.2s' }}>
-            Embark on a soulful journey through ragas and talas. Learn from a passionate teacher 
-            who is also a dedicated student of this ancient art form.
+            Embark on a soulful journey through ragas and talas. Learn from passionate teachers who are deeply devoted to this ancient art form and have surrendered themselves to years of dedicated sadhana.
           </p>
 
           {/* CTA Buttons */}
@@ -64,12 +63,12 @@ const HeroSection = () => {
               <div className="text-sm text-[#4A5E52]">Happy Students</div>
             </div>
             <div className="text-center">
-              <div className="font-display text-3xl md:text-4xl font-bold text-primary">10+</div>
-              <div className="text-sm text-[#4A5E52]">Years Learning</div>
+              <div className="font-display text-3xl md:text-4xl font-bold text-primary">20+</div>
+              <div className="text-sm text-[#4A5E52]">Years of Learning</div>
             </div>
             <div className="text-center">
-              <div className="font-display text-3xl md:text-4xl font-bold text-primary">50+</div>
-              <div className="text-sm text-[#4A5E52]">Ragas Taught</div>
+              <div className="font-display text-3xl md:text-4xl font-bold text-primary">5+</div>
+              <div className="text-sm text-[#4A5E52]">Years of Teaching</div>
             </div>
           </div>
         </div>

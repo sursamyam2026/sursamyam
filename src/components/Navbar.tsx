@@ -21,9 +21,11 @@ import logo from "@/assets/logo.jpeg";
 const sectionLinks = [
   { hash: "about", label: "About" },
   { hash: "music", label: "The Music" },
-  { hash: "classes", label: "Classes" },
   { hash: "teacher", label: "Your Teacher" },
+  { hash: "classes", label: "Classes" },
 ];
+
+const pageLinks = [{ to: "/syllabus", label: "Syllabus" }];
 
 const feesLinks = [
   { to: "/registration/course-details", label: "Courses" },
@@ -94,6 +96,12 @@ const Navbar = () => {
               </Link>
             ))}
 
+            {pageLinks.map((link) => (
+              <Link key={link.to} to={link.to} className={linkClass}>
+                {link.label}
+              </Link>
+            ))}
+
             <DropdownMenu>
               <DropdownMenuTrigger className={`${linkClass} flex items-center gap-1 outline-none`}>
                 Registration <ChevronDown className="h-4 w-4 text-[#1B4D3E]" />
@@ -117,7 +125,7 @@ const Navbar = () => {
           {/* CTA Button */}
           <div className="hidden lg:block">
             <Button variant="hero" size="default" className="text-[#1B1100]" asChild>
-              <Link to={contactTo}>Start Learning</Link>
+              <Link to="/registration/course-details">Start Learning</Link>
             </Button>
           </div>
 
@@ -139,6 +147,17 @@ const Navbar = () => {
                 <Link
                   key={link.hash}
                   to={sectionTo(link.hash)}
+                  className="py-2 font-medium text-[#1B4D3E] transition-colors hover:text-[#C9922A]"
+                  onClick={() => setIsOpen(false)}
+                >
+                  {link.label}
+                </Link>
+              ))}
+
+              {pageLinks.map((link) => (
+                <Link
+                  key={link.to}
+                  to={link.to}
                   className="py-2 font-medium text-[#1B4D3E] transition-colors hover:text-[#C9922A]"
                   onClick={() => setIsOpen(false)}
                 >
@@ -181,7 +200,7 @@ const Navbar = () => {
               </Link>
 
               <Button variant="hero" className="mt-2 text-[#1B1100]" asChild>
-                <Link to={contactTo} onClick={() => setIsOpen(false)}>
+                <Link to="/registration/course-details" onClick={() => setIsOpen(false)}>
                   Start Learning
                 </Link>
               </Button>

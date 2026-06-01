@@ -18,6 +18,7 @@ import {
   CONVENIENCE_FEE_RUPEES,
   formatRupee,
   getCourse,
+  getMonthlyRupee,
 } from "@/lib/fees-courses";
 import { EnrollmentTermsContent } from "@/content/enrollment-terms";
 import { finalizeEnrollmentCheckout } from "@/lib/leads";
@@ -40,11 +41,13 @@ const EnrollPayment = () => {
     return <Navigate to="/student/enroll" replace />;
   }
 
-  const monthly = fc.monthlyRupee;
+  const selectedFormat = state.format ?? "online";
+  const monthly = getMonthlyRupee(fc, selectedFormat);
   const registration = fc.registrationRupee;
   const subtotal = monthly + registration;
   const convenience = CONVENIENCE_FEE_RUPEES;
   const grand = subtotal + convenience;
+  const formatLabel = selectedFormat === "offline" ? "Offline" : "Online";
 
   const handleSubmit = async () => {
     if (!agreed) return;
@@ -58,7 +61,7 @@ const EnrollPayment = () => {
         age: state.age,
         city: state.city,
         country: state.country,
-        courseLine: `${fc.name} (${state.track === "adults" ? "Adults" : "Kids"})`,
+        courseLine: `${fc.name} (${state.track === "adults" ? "Adults" : "Kids"} · ${formatLabel})`,
       });
 
       toast({
@@ -100,6 +103,9 @@ const EnrollPayment = () => {
             </p>
             <p className="text-[#4A5E52]">
               <span className="text-[#1B4D3E] font-medium">Mobile Number</span> : {state.phone}
+            </p>
+            <p className="text-[#4A5E52]">
+              <span className="text-[#1B4D3E] font-medium">Class Format</span> : {formatLabel}
             </p>
           </div>
 
