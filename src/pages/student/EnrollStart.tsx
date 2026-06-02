@@ -4,6 +4,8 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import PhoneInput from "react-phone-number-input";
+import "react-phone-number-input/style.css";
 import {
   adultCourses,
   kidsCourses,
@@ -11,6 +13,12 @@ import {
   type FeeTrack,
   getCourse,
 } from "@/lib/fees-courses";
+import {
+  countryNameFromCode,
+  countryNameFromPhoneNumber,
+  normalizePhoneNumber,
+  validatePhoneNumber,
+} from "@/lib/phone";
 
 export type EnrollCheckoutState = {
   name: string;
@@ -39,10 +47,12 @@ const EnrollStart = () => {
 
   const [name, setName] = useState(pref.name ?? "");
   const [email, setEmail] = useState(pref.email ?? "");
-  const [phone, setPhone] = useState(pref.phone ?? "");
+  const initialPhone = normalizePhoneNumber(pref.phone ?? "");
+  const [phone, setPhone] = useState(initialPhone);
   const [age, setAge] = useState(pref.age ?? "");
   const [city, setCity] = useState(pref.city ?? "");
-  const [country, setCountry] = useState(pref.country ?? "");
+  const [country, setCountry] = useState(pref.country ?? countryNameFromPhoneNumber(initialPhone));
+  const [phoneError, setPhoneError] = useState<string | null>(null);
   const [track] = useState<FeeTrack>(initialTrack);
   const [format] = useState<CourseFormat>(
     pref.format === "offline" || pref.format === "online" ? pref.format : queryFormat,
@@ -64,10 +74,17 @@ const EnrollStart = () => {
     const fc = getCourse(track, courseName);
     if (!fc) return;
 
+    const validationError = validatePhoneNumber(phone);
+    if (validationError) {
+      setPhoneError(validationError);
+      return;
+    }
+
+    setPhoneError(null);
     const state: EnrollCheckoutState = {
       name,
       email,
-      phone,
+      phone: normalizePhoneNumber(phone),
       age,
       city,
       country,
@@ -103,6 +120,7 @@ const EnrollStart = () => {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   autoComplete="name"
+                  placeholder="Your full name"
                   required
                 />
               </div>
@@ -114,19 +132,36 @@ const EnrollStart = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   autoComplete="email"
+                  placeholder="you@example.com"
                   required
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="enroll-phone">Phone</Label>
-                <Input
+                <PhoneInput
                   id="enroll-phone"
-                  type="tel"
+                  international
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  onChange={(value) => {
+                    setPhone(value ?? "");
+                    setPhoneError(null);
+                  }}
+                  onCountryChange={(selectedCountry) => {
+                    const selectedCountryName = countryNameFromCode(selectedCountry);
+                    if (selectedCountryName) setCountry(selectedCountryName);
+                  }}
                   autoComplete="tel"
+                  placeholder="Enter mobile number"
                   required
+                  className="phone-input h-10 rounded-md border border-input bg-background px-3 text-sm"
+                  aria-invalid={!!phoneError}
+                  aria-describedby={phoneError ? "enroll-phone-error" : undefined}
                 />
+                {phoneError && (
+                  <p id="enroll-phone-error" className="text-sm text-destructive" role="alert">
+                    {phoneError}
+                  </p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="enroll-age">Age</Label>
@@ -134,7 +169,8 @@ const EnrollStart = () => {
                   id="enroll-age"
                   inputMode="numeric"
                   value={age}
-                  onChange={(e) => setAge(e.target.value)}
+                  onChange={(e) => setAge(e.target.value.replace(/\D/g, ""))}
+                  placeholder="18"
                   required
                 />
               </div>
@@ -145,6 +181,7 @@ const EnrollStart = () => {
                   value={city}
                   onChange={(e) => setCity(e.target.value)}
                   autoComplete="address-level2"
+                  placeholder="Mumbai"
                   required
                 />
               </div>
@@ -155,6 +192,7 @@ const EnrollStart = () => {
                   value={country}
                   onChange={(e) => setCountry(e.target.value)}
                   autoComplete="country-name"
+                  placeholder="India"
                   required
                 />
               </div>

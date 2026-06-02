@@ -5,8 +5,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Mail, Phone, MapPin, Send, Music } from "lucide-react";
 import { useState } from "react";
+import PhoneInput from "react-phone-number-input";
+import "react-phone-number-input/style.css";
 import { useToast } from "@/hooks/use-toast";
 import { leadsStore } from "@/lib/leads";
+import { normalizePhoneNumber, validatePhoneNumber } from "@/lib/phone";
 
 const ContactSection = () => {
   const { toast } = useToast();
@@ -16,16 +19,24 @@ const ContactSection = () => {
     phone: "",
     message: "",
   });
+  const [phoneError, setPhoneError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const validationError = validatePhoneNumber(formData.phone);
+    if (validationError) {
+      setPhoneError(validationError);
+      return;
+    }
+
+    setPhoneError(null);
     setIsSubmitting(true);
     try {
       await leadsStore.add({
         name: formData.name.trim(),
         email: formData.email.trim(),
-        phone: formData.phone.trim(),
+        phone: normalizePhoneNumber(formData.phone),
         message: formData.message.trim(),
       });
       toast({
@@ -159,14 +170,25 @@ const ContactSection = () => {
 
                 <div className="space-y-2">
                   <Label htmlFor="phone" className="text-[#1B4D3E]">Phone Number</Label>
-                  <Input
+                  <PhoneInput
                     id="phone"
-                    placeholder="Enter your phone number"
+                    international
                     value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    onChange={(value) => {
+                      setFormData({ ...formData, phone: value ?? "" });
+                      setPhoneError(null);
+                    }}
+                    placeholder="Enter your mobile number"
                     required
-                    className="h-12 border-[#C9922A] bg-white text-[#1B4D3E] placeholder:text-[#4A5E52]"
+                    className="phone-input h-12 rounded-md border border-[#C9922A] bg-white px-3 text-[#1B4D3E]"
+                    aria-invalid={!!phoneError}
+                    aria-describedby={phoneError ? "phone-error" : undefined}
                   />
+                  {phoneError && (
+                    <p id="phone-error" className="text-sm text-destructive" role="alert">
+                      {phoneError}
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-2">

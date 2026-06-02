@@ -166,6 +166,27 @@
 }
 
 @layer components {
+  .phone-input .PhoneInputCountry {
+    align-self: stretch;
+    margin-right: 0.75rem;
+  }
+
+  .phone-input .PhoneInputCountrySelect {
+    cursor: pointer;
+  }
+
+  .phone-input .PhoneInputInput {
+    min-width: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    outline: 0;
+  }
+
+  .phone-input .PhoneInputInput::placeholder {
+    color: hsl(var(--muted-foreground));
+  }
+
   .animate-float {
     animation: float 6s ease-in-out infinite;
   }
