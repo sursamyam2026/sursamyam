@@ -14,28 +14,59 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { examRegistrationsStore } from "@/lib/exam-registrations";
+import { leadsStore } from "@/lib/leads";
 import { useNavigate } from "react-router-dom";
+
+function normalizeRollNumber(rollNumber: string) {
+  return rollNumber.trim().toLowerCase();
+}
 
 const ExamRegistration = () => {
   const navigate = useNavigate();
   const [rollNumber, setRollNumber] = useState("");
+  const [rollError, setRollError] = useState<string | null>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     const trimmedRollNumber = rollNumber.trim();
     if (!trimmedRollNumber) return;
-    if (examRegistrationsStore.findByRollNumber(trimmedRollNumber)) {
-      setIsSubmitted(false);
-      setShowDuplicateDialog(true);
-      return;
-    }
 
-    examRegistrationsStore.add(trimmedRollNumber);
-    setRollNumber("");
-    setIsSubmitted(true);
+    setRollError(null);
+    setIsSubmitting(true);
+    try {
+      const leads = await leadsStore.list();
+      const enrolledLead = leads.find(
+        (lead) =>
+          lead.status === "enrolled" &&
+          lead.rollNumber &&
+          normalizeRollNumber(lead.rollNumber) === normalizeRollNumber(trimmedRollNumber),
+      );
+
+      if (!enrolledLead) {
+        setIsSubmitted(false);
+        setRollError("Enter a valid enrolled student roll number.");
+        return;
+      }
+
+      if (examRegistrationsStore.findByRollNumber(trimmedRollNumber)) {
+        setIsSubmitted(false);
+        setShowDuplicateDialog(true);
+        return;
+      }
+
+      examRegistrationsStore.add(enrolledLead.rollNumber ?? trimmedRollNumber);
+      setRollNumber("");
+      setIsSubmitted(true);
+    } catch (error) {
+      setIsSubmitted(false);
+      setRollError(error instanceof Error ? error.message : "Unable to validate roll number.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -64,16 +95,24 @@ const ExamRegistration = () => {
                 value={rollNumber}
                 onChange={(event) => {
                   setRollNumber(event.target.value);
+                  setRollError(null);
                   if (isSubmitted) setIsSubmitted(false);
                   if (showDuplicateDialog) setShowDuplicateDialog(false);
                 }}
                 placeholder="Enter your roll number"
                 autoComplete="off"
                 required
+                aria-invalid={!!rollError}
+                aria-describedby={rollError ? "roll-number-error" : undefined}
               />
+              {rollError ? (
+                <p id="roll-number-error" className="text-sm text-destructive" role="alert">
+                  {rollError}
+                </p>
+              ) : null}
             </div>
-            <Button variant="hero" type="submit" className="w-full">
-              Submit
+            <Button variant="hero" type="submit" className="w-full" disabled={isSubmitting}>
+              {isSubmitting ? "Validating..." : "Submit"}
             </Button>
           </form>
           {isSubmitted ? (
