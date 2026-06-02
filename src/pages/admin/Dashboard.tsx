@@ -6,7 +6,7 @@ import { Link } from "react-router-dom";
 
 const Dashboard = () => {
   const { leads, isLoading, error } = useLeads();
-  const examRegistrations = useExamRegistrations();
+  const { registrations: examRegistrations } = useExamRegistrations();
   const newCount = leads.filter((l) => l.status === "new").length;
   const recent = leads.slice(0, 5);
 

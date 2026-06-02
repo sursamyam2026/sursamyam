@@ -40,6 +40,18 @@ create table if not exists public.gallery_images (
 create index if not exists gallery_images_created_at_idx
 on public.gallery_images (created_at desc);
 
+create table if not exists public.exam_registrations (
+  id uuid primary key default gen_random_uuid(),
+  roll_number text not null,
+  created_at timestamptz not null default now()
+);
+
+create unique index if not exists exam_registrations_roll_number_lower_idx
+on public.exam_registrations (lower(roll_number));
+
+create index if not exists exam_registrations_created_at_idx
+on public.exam_registrations (created_at desc);
+
 create table if not exists public.student_profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   email text not null unique,
@@ -63,6 +75,7 @@ create table if not exists public.admin_users (
 alter table public.leads enable row level security;
 alter table public.roll_meta enable row level security;
 alter table public.gallery_images enable row level security;
+alter table public.exam_registrations enable row level security;
 alter table public.student_profiles enable row level security;
 alter table public.admin_users enable row level security;
 
@@ -154,9 +167,52 @@ begin
 end;
 $$;
 
+create or replace function public.find_exam_registration(p_roll_number text)
+returns public.exam_registrations
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select *
+  from public.exam_registrations
+  where lower(roll_number) = lower(trim(coalesce(p_roll_number, '')))
+  order by created_at desc
+  limit 1;
+$$;
+
+create or replace function public.submit_exam_registration(p_roll_number text)
+returns public.exam_registrations
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_registration public.exam_registrations;
+begin
+  select *
+  into v_registration
+  from public.exam_registrations
+  where lower(roll_number) = lower(trim(coalesce(p_roll_number, '')))
+  limit 1;
+
+  if v_registration.id is not null then
+    return null;
+  end if;
+
+  insert into public.exam_registrations (roll_number)
+  values (trim(coalesce(p_roll_number, '')))
+  returning * into v_registration;
+
+  return v_registration;
+end;
+$$;
+
 grant execute on function public.is_admin() to anon, authenticated;
 grant execute on function public.submit_contact_lead(text, text, text, text) to anon, authenticated;
 grant execute on function public.finalize_enrollment_lead(text, text, text, text) to anon, authenticated;
+grant execute on function public.find_exam_registration(text) to anon, authenticated;
+grant execute on function public.submit_exam_registration(text) to anon, authenticated;
 
 drop policy if exists "Temporary allow frontend lead management" on public.leads;
 drop policy if exists "Temporary allow frontend roll metadata management" on public.roll_meta;
@@ -166,6 +222,7 @@ drop policy if exists "Admins can manage leads" on public.leads;
 drop policy if exists "Admins can manage roll metadata" on public.roll_meta;
 drop policy if exists "Public can read gallery images" on public.gallery_images;
 drop policy if exists "Admins can manage gallery images" on public.gallery_images;
+drop policy if exists "Admins can manage exam registrations" on public.exam_registrations;
 drop policy if exists "Students can read own profile" on public.student_profiles;
 drop policy if exists "Students can update own profile" on public.student_profiles;
 drop policy if exists "Students can insert own profile" on public.student_profiles;
@@ -190,6 +247,12 @@ using (true);
 
 create policy "Admins can manage gallery images"
 on public.gallery_images for all
+to authenticated
+using (public.is_admin())
+with check (public.is_admin());
+
+create policy "Admins can manage exam registrations"
+on public.exam_registrations for all
 to authenticated
 using (public.is_admin())
 with check (public.is_admin());

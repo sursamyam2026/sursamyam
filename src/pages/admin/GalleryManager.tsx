@@ -33,7 +33,7 @@ function readFileAsDataUrl(file: File): Promise<string> {
 }
 
 const GalleryManager = () => {
-  const images = useGallery();
+  const { images, isLoading, error, refresh } = useGallery();
   const uploadCount = useMemo(
     () => images.filter((image) => image.source === "upload").length,
     [images],
@@ -71,7 +71,8 @@ const GalleryManager = () => {
         })),
       );
 
-      galleryStore.addMany(uploads);
+      await galleryStore.addMany(uploads);
+      await refresh();
       setSelectedFiles([]);
       setDescription("");
 
@@ -91,12 +92,21 @@ const GalleryManager = () => {
     }
   };
 
-  const handleDelete = (id: string) => {
-    galleryStore.remove(id);
-    toast({
-      title: "Image removed",
-      description: "The selected upload was removed from the gallery.",
-    });
+  const handleDelete = async (id: string) => {
+    try {
+      await galleryStore.remove(id);
+      await refresh();
+      toast({
+        title: "Image removed",
+        description: "The selected upload was removed from the gallery.",
+      });
+    } catch (err) {
+      toast({
+        title: "Unable to remove image",
+        description: err instanceof Error ? err.message : "Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -104,8 +114,9 @@ const GalleryManager = () => {
       <div>
         <h1 className="font-display text-2xl font-bold lg:text-3xl">Gallery Manager</h1>
         <p className="mt-1 text-muted-foreground">
-          Upload new gallery images for the public page. Uploaded images are saved in this
-          browser for demo use.
+          {error
+            ? "Unable to load gallery images."
+            : "Upload new gallery images for the public page."}
         </p>
       </div>
 
@@ -171,7 +182,9 @@ const GalleryManager = () => {
       </Card>
 
       <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
-        {images.map((image) => (
+        {isLoading ? (
+          <Card className="p-6 text-sm text-muted-foreground">Loading gallery...</Card>
+        ) : images.map((image) => (
           <Card key={image.id} className="overflow-hidden">
             <div className="aspect-[4/3] overflow-hidden bg-[#F5ECD7]">
               <img src={image.src} alt={image.title} className="h-full w-full object-cover" />

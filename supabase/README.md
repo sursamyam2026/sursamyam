@@ -20,6 +20,13 @@ In Supabase Dashboard:
 `supabase/leads.sql` is the smaller phase-1-only script. `supabase/schema.sql`
 contains the wider planned schema for leads, gallery, students, and admins.
 
+If you already ran the leads/admin scripts and only need gallery plus exam
+registrations, run:
+
+```text
+supabase/gallery-exams.sql
+```
+
 ## Configure The App
 
 Create `.env.local` in the project root:
@@ -50,3 +57,13 @@ on conflict (id) do nothing;
 
 If you previously ran the temporary phase-1 schema, run `supabase/admin-auth.sql`
 in SQL Editor to add the admin policies and public lead RPC functions.
+
+## Gallery And Exam Registrations
+
+Gallery metadata is stored in `gallery_images`. The current app stores uploaded
+image data URLs in the `src` column, preserving the existing upload flow. Moving
+binary files to Supabase Storage can be done later if upload size becomes a
+concern.
+
+Exam registrations are stored in `exam_registrations`. Public users submit roll
+numbers through RPC functions; admins read and delete registrations through RLS.

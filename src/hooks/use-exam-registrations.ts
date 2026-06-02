@@ -5,17 +5,27 @@ import {
 } from "@/lib/exam-registrations";
 
 export function useExamRegistrations() {
-  const [registrations, setRegistrations] = useState<ExamRegistration[]>(() =>
-    examRegistrationsStore.list(),
-  );
+  const [registrations, setRegistrations] = useState<ExamRegistration[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
 
-  useEffect(
-    () =>
-      examRegistrationsStore.subscribe(() =>
-        setRegistrations(examRegistrationsStore.list()),
-      ),
-    [],
-  );
+  const refresh = async () => {
+    try {
+      setError(null);
+      setRegistrations(await examRegistrationsStore.list());
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error("Unable to load exam registrations."));
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-  return registrations;
+  useEffect(() => {
+    void refresh();
+    return examRegistrationsStore.subscribe(() => {
+      void refresh();
+    });
+  }, []);
+
+  return { registrations, isLoading, error, refresh };
 }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,22 +24,47 @@ import { useExamRegistrations } from "@/hooks/use-exam-registrations";
 import { examRegistrationsStore } from "@/lib/exam-registrations";
 import { leadsStore } from "@/lib/leads";
 import { studentAccountsRepo } from "@/lib/student-auth";
+import type { ExamRegistration } from "@/lib/exam-registrations.types";
+
+interface ExamRegistrationRow extends ExamRegistration {
+  name: string;
+  email: string;
+  phone: string;
+}
 
 const ExamRegistrations = () => {
-  const registrations = useExamRegistrations();
+  const { registrations, isLoading, error, refresh } = useExamRegistrations();
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
-  const leads = leadsStore.list();
-  const rows = registrations.map((registration) => {
-    const lead = leads.find((item) => item.rollNumber === registration.rollNumber);
-    const account = lead ? studentAccountsRepo.findByEmail(lead.email) : undefined;
+  const [rows, setRows] = useState<ExamRegistrationRow[]>([]);
 
-    return {
-      ...registration,
-      name: account?.name || lead?.name || "Unknown student",
-      email: account?.email || lead?.email || "—",
-      phone: account?.phone || lead?.phone || "—",
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadRows() {
+      const leads = await leadsStore.list();
+      const nextRows = registrations.map((registration) => {
+        const lead = leads.find((item) => item.rollNumber === registration.rollNumber);
+        const account = lead ? studentAccountsRepo.findByEmail(lead.email) : undefined;
+
+        return {
+          ...registration,
+          name: account?.name || lead?.name || "Unknown student",
+          email: account?.email || lead?.email || "-",
+          phone: account?.phone || lead?.phone || "-",
+        };
+      });
+
+      if (!cancelled) {
+        setRows(nextRows);
+      }
+    }
+
+    void loadRows();
+    return () => {
+      cancelled = true;
     };
-  });
+  }, [registrations]);
+
   const pendingDelete = rows.find((registration) => registration.id === pendingDeleteId) ?? null;
 
   return (
@@ -49,14 +74,18 @@ const ExamRegistrations = () => {
           Exam Registrations
         </h1>
         <p className="text-muted-foreground mt-1">
-          {registrations.length}{" "}
-          {registrations.length === 1 ? "student has" : "students have"} registered
-          for exams.
+          {error
+            ? "Unable to load exam registrations."
+            : `${registrations.length} ${registrations.length === 1 ? "student has" : "students have"} registered for exams.`}
         </p>
       </div>
 
       <Card variant="default" className="p-0 overflow-hidden">
-        {registrations.length === 0 ? (
+        {isLoading ? (
+          <div className="text-center py-16 px-4 text-muted-foreground">
+            <p className="font-medium text-foreground">Loading exam registrations...</p>
+          </div>
+        ) : registrations.length === 0 ? (
           <div className="text-center py-16 px-4 text-muted-foreground">
             <Inbox className="w-12 h-12 mx-auto mb-3 opacity-40" />
             <p className="font-medium text-foreground">
@@ -132,9 +161,10 @@ const ExamRegistrations = () => {
           <AlertDialogFooter>
             <AlertDialogCancel>No</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => {
+              onClick={async () => {
                 if (pendingDelete) {
-                  examRegistrationsStore.remove(pendingDelete.id);
+                  await examRegistrationsStore.remove(pendingDelete.id);
+                  await refresh();
                 }
                 setPendingDeleteId(null);
               }}

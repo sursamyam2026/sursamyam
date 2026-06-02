@@ -21,21 +21,27 @@ const ExamRegistration = () => {
   const [rollNumber, setRollNumber] = useState("");
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     const trimmedRollNumber = rollNumber.trim();
     if (!trimmedRollNumber) return;
-    if (examRegistrationsStore.findByRollNumber(trimmedRollNumber)) {
-      setIsSubmitted(false);
-      setShowDuplicateDialog(true);
-      return;
-    }
 
-    examRegistrationsStore.add(trimmedRollNumber);
-    setRollNumber("");
-    setIsSubmitted(true);
+    setIsSubmitting(true);
+    try {
+      const registration = await examRegistrationsStore.add(trimmedRollNumber);
+      if (!registration) {
+        setIsSubmitted(false);
+        setShowDuplicateDialog(true);
+        return;
+      }
+      setRollNumber("");
+      setIsSubmitted(true);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -72,8 +78,8 @@ const ExamRegistration = () => {
                 required
               />
             </div>
-            <Button variant="hero" type="submit" className="w-full">
-              Submit
+            <Button variant="hero" type="submit" className="w-full" disabled={isSubmitting}>
+              {isSubmitting ? "Submitting..." : "Submit"}
             </Button>
           </form>
           {isSubmitted ? (
