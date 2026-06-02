@@ -21,14 +21,14 @@ import {
 } from "@/components/ui/table";
 import { Trash2, Inbox } from "lucide-react";
 import { useExamRegistrations } from "@/hooks/use-exam-registrations";
+import { useLeads } from "@/hooks/use-leads";
 import { examRegistrationsStore } from "@/lib/exam-registrations";
-import { leadsStore } from "@/lib/leads";
 import { studentAccountsRepo } from "@/lib/student-auth";
 
 const ExamRegistrations = () => {
   const registrations = useExamRegistrations();
+  const { leads, isLoading: isLoadingLeads, error: leadsError } = useLeads();
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
-  const leads = leadsStore.list();
   const rows = registrations.map((registration) => {
     const lead = leads.find((item) => item.rollNumber === registration.rollNumber);
     const account = lead ? studentAccountsRepo.findByEmail(lead.email) : undefined;
@@ -56,7 +56,16 @@ const ExamRegistrations = () => {
       </div>
 
       <Card variant="default" className="p-0 overflow-hidden">
-        {registrations.length === 0 ? (
+        {leadsError ? (
+          <div className="text-center py-16 px-4 text-destructive">
+            <p className="font-medium">Unable to load student details</p>
+            <p className="text-sm mt-1">{leadsError.message}</p>
+          </div>
+        ) : isLoadingLeads ? (
+          <div className="text-center py-16 px-4 text-muted-foreground">
+            <p className="font-medium text-foreground">Loading exam registrations...</p>
+          </div>
+        ) : registrations.length === 0 ? (
           <div className="text-center py-16 px-4 text-muted-foreground">
             <Inbox className="w-12 h-12 mx-auto mb-3 opacity-40" />
             <p className="font-medium text-foreground">
