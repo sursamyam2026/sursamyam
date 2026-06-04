@@ -7,7 +7,7 @@ import { ArrowLeft, Image as ImageIcon, UploadCloud } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const Gallery = () => {
-  const images = useGallery();
+  const { images, isLoading, error } = useGallery();
 
   return (
     <div className="min-h-screen bg-[#FDF6EC]">
@@ -45,7 +45,19 @@ const Gallery = () => {
             </div>
           </div>
 
-          {images.length === 0 ? (
+          {isLoading ? (
+            <Card className="border-dashed border-[#C9922A] bg-white/70">
+              <CardContent className="flex flex-col items-center px-6 py-16 text-center">
+                <p className="text-sm text-[#4A5E52]">Loading gallery...</p>
+              </CardContent>
+            </Card>
+          ) : error ? (
+            <Card className="border-dashed border-[#C9922A] bg-white/70">
+              <CardContent className="flex flex-col items-center px-6 py-16 text-center">
+                <p className="text-sm text-[#4A5E52]">Unable to load gallery images.</p>
+              </CardContent>
+            </Card>
+          ) : images.length === 0 ? (
             <Card className="border-dashed border-[#C9922A] bg-white/70">
               <CardContent className="flex flex-col items-center px-6 py-16 text-center">
                 <UploadCloud className="mb-4 h-10 w-10 text-[#C9922A]" />
@@ -69,6 +81,8 @@ const Gallery = () => {
                     <img
                       src={image.src}
                       alt={image.title}
+                      loading="lazy"
+                      decoding="async"
                       className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
                     />
                   </div>

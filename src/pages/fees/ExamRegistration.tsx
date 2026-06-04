@@ -52,13 +52,19 @@ const ExamRegistration = () => {
         return;
       }
 
-      if (examRegistrationsStore.findByRollNumber(trimmedRollNumber)) {
+      if (await examRegistrationsStore.findByRollNumber(trimmedRollNumber)) {
         setIsSubmitted(false);
         setShowDuplicateDialog(true);
         return;
       }
 
-      examRegistrationsStore.add(enrolledLead.rollNumber ?? trimmedRollNumber);
+      const registration = await examRegistrationsStore.add(enrolledLead.rollNumber ?? trimmedRollNumber);
+      if (!registration) {
+        setIsSubmitted(false);
+        setShowDuplicateDialog(true);
+        return;
+      }
+
       setRollNumber("");
       setIsSubmitted(true);
     } catch (error) {
