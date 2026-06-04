@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,8 +21,8 @@ import {
 } from "@/components/ui/table";
 import { Trash2, Inbox } from "lucide-react";
 import { useExamRegistrations } from "@/hooks/use-exam-registrations";
+import { useLeads } from "@/hooks/use-leads";
 import { examRegistrationsStore } from "@/lib/exam-registrations";
-import { leadsStore } from "@/lib/leads";
 import { studentAccountsRepo } from "@/lib/student-auth";
 import type { ExamRegistration } from "@/lib/exam-registrations.types";
 
@@ -34,38 +34,23 @@ interface ExamRegistrationRow extends ExamRegistration {
 
 const ExamRegistrations = () => {
   const { registrations, isLoading, error, refresh } = useExamRegistrations();
+  const { leads, isLoading: isLoadingLeads, error: leadsError } = useLeads();
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
-  const [rows, setRows] = useState<ExamRegistrationRow[]>([]);
+  const rows: ExamRegistrationRow[] = registrations.map((registration) => {
+    const lead = leads.find((item) => item.rollNumber === registration.rollNumber);
+    const account = lead ? studentAccountsRepo.findByEmail(lead.email) : undefined;
 
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadRows() {
-      const leads = await leadsStore.list();
-      const nextRows = registrations.map((registration) => {
-        const lead = leads.find((item) => item.rollNumber === registration.rollNumber);
-        const account = lead ? studentAccountsRepo.findByEmail(lead.email) : undefined;
-
-        return {
-          ...registration,
-          name: account?.name || lead?.name || "Unknown student",
-          email: account?.email || lead?.email || "-",
-          phone: account?.phone || lead?.phone || "-",
-        };
-      });
-
-      if (!cancelled) {
-        setRows(nextRows);
-      }
-    }
-
-    void loadRows();
-    return () => {
-      cancelled = true;
+    return {
+      ...registration,
+      name: account?.name || lead?.name || "Unknown student",
+      email: account?.email || lead?.email || "-",
+      phone: account?.phone || lead?.phone || "-",
     };
-  }, [registrations]);
+  });
 
   const pendingDelete = rows.find((registration) => registration.id === pendingDeleteId) ?? null;
+  const pageError = error || leadsError;
+  const pageIsLoading = isLoading || isLoadingLeads;
 
   return (
     <div className="space-y-6 max-w-5xl">
@@ -74,14 +59,19 @@ const ExamRegistrations = () => {
           Exam Registrations
         </h1>
         <p className="text-muted-foreground mt-1">
-          {error
+          {pageError
             ? "Unable to load exam registrations."
             : `${registrations.length} ${registrations.length === 1 ? "student has" : "students have"} registered for exams.`}
         </p>
       </div>
 
       <Card variant="default" className="p-0 overflow-hidden">
-        {isLoading ? (
+        {pageError ? (
+          <div className="text-center py-16 px-4 text-destructive">
+            <p className="font-medium">Unable to load exam registrations</p>
+            <p className="text-sm mt-1">{pageError.message}</p>
+          </div>
+        ) : pageIsLoading ? (
           <div className="text-center py-16 px-4 text-muted-foreground">
             <p className="font-medium text-foreground">Loading exam registrations...</p>
           </div>
