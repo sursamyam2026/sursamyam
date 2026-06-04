@@ -1,5 +1,6 @@
 /**
- * Canonical Terms & Conditions for Sur Samyam online enrollment (demo checkout).
+ * Canonical Terms & Conditions for Sur Samyam online enrollment.
+ * TODO: Revisit payment gateway, convenience fee, and refund language when online payments are integrated.
  */
 
 export function EnrollmentTermsContent() {
@@ -9,8 +10,7 @@ export function EnrollmentTermsContent() {
         <h3>Payments and Refunds</h3>
         <ul className="mt-2 list-disc space-y-2 pl-5">
           <li>
-            All payments are to be made online using the <strong>Razorpay</strong> gateway when live.
-            Completing enrollment in demo mode does not process a real payment.
+            Payment instructions will be shared by Sur Samyam during the enrollment process.
           </li>
           <li>We follow a strict <strong>no-refund policy</strong> except as explicitly stated below.</li>
           <li>
@@ -19,17 +19,17 @@ export function EnrollmentTermsContent() {
             at Sur Samyam&apos;s discretion.
           </li>
           <li>
-            Any <strong>convenience fee</strong> charged by the payment gateway during checkout{" "}
+            Any transaction or service charges applied by a payment provider, if applicable,{" "}
             <strong>cannot be refunded or reversed</strong>.
           </li>
         </ul>
       </section>
 
       <section>
-        <h3>Convenience fees</h3>
+        <h3>Transaction charges</h3>
         <p className="mt-2">
-          For online payments, a nominal <strong>convenience fee</strong> may be charged by the payment gateway for
-          processing credit card, debit card, net banking, or e-wallet transactions.
+          If payments are collected through a third-party provider in the future, any applicable{" "}
+          <strong>transaction charges</strong> may be communicated separately before payment.
         </p>
       </section>
 
@@ -107,6 +107,11 @@ export function EnrollmentTermsContent() {
           is essential. If the Guru determines a <strong>recording</strong> is necessary for a student&apos;s progress,
           guidance will be given on a case-by-case basis. General availability of recordings is{" "}
           <strong>not guaranteed</strong> unless provided by the teacher.
+        </p>
+        <p className="mt-2">
+          In the event of a <strong>student-initiated absence</strong>, the teacher will offer compensation for a
+          maximum of <strong>2 classes per month</strong>. We encourage students to plan their schedules mindfully to
+          make the most of every class.
         </p>
       </section>
 

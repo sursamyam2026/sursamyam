@@ -59,19 +59,19 @@ const ContactSection = () => {
     {
       icon: Mail,
       label: "Email",
-      value: "hello@swarshiksha.com",
-      href: "mailto:hello@swarshiksha.com",
+      value: "sursamyam@gmail.com",
+      href: "mailto:sursamyam@gmail.com",
     },
     {
       icon: Phone,
       label: "Phone",
-      value: "+91 98765 43210",
-      href: "tel:+919876543210",
+      value: "8328952116 / 9611198173",
+      href: "tel:+918328952116",
     },
     {
       icon: MapPin,
       label: "Location",
-      value: "Mumbai, India",
+      value: "Sarjapur, Bangalore, India",
       href: "#",
     },
   ];

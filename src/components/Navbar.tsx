@@ -20,7 +20,6 @@ import logo from "@/assets/logo.jpeg";
 
 const sectionLinks = [
   { hash: "about", label: "About" },
-  { hash: "music", label: "The Music" },
   { hash: "teacher", label: "Your Teacher" },
   { hash: "classes", label: "Classes" },
 ];

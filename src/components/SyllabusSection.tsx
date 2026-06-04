@@ -84,6 +84,38 @@ const SyllabusSection = () => {
             </div>
           </div>
 
+          <div className="mb-14 rounded-[24px] border-[1.5px] border-[#C9922A] bg-white p-6 shadow-md md:p-8">
+            <h2 className="mb-5 font-display text-2xl font-semibold text-[#1B4D3E] md:text-3xl">
+              Our Syllabus
+            </h2>
+            <div className="space-y-4 text-base leading-relaxed text-[#4A5E52]">
+              <p>
+                At Sur Samyam, our curriculum is rooted in the most respected and time-honoured traditions of
+                Hindustani classical music. We follow the syllabi of{" "}
+                <span className="font-semibold text-[#1B4D3E]">Gandharva Mahavidyalaya</span>,{" "}
+                <span className="font-semibold text-[#C9922A]">Pandit Krishnarao Shankar Pandit (PKK)</span>, and
+                the <span className="font-semibold text-[#1B4D3E]">Gangubai Hangal tradition</span> - each
+                representing a distinct and celebrated lineage within Hindustani vocal music.
+              </p>
+              <p>
+                This multi-tradition approach ensures that our students receive a well-rounded and rigorous foundation
+                - from raga grammar and tala to voice culture and compositions - while staying deeply connected to the
+                roots of the classical form.
+              </p>
+              <p>
+                We welcome students of all ages, from young beginners discovering their first notes to adults returning
+                to a lifelong passion. Our structured syllabus guides every learner at their own pace, building
+                confidence and competence at each stage.
+              </p>
+              <p>
+                For those looking to formally certify their musical journey, we provide{" "}
+                <span className="font-semibold text-[#C9922A]">dedicated examination guidance</span> under these
+                syllabi - helping students prepare thoroughly and appear for graded examinations with clarity and
+                confidence.
+              </p>
+            </div>
+          </div>
+
           <div className="mx-auto flex max-w-5xl flex-col gap-6">
             {syllabusItems.map((item, index) => (
               <Card

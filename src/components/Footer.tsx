@@ -8,12 +8,11 @@ const Footer = () => {
   const socialLinks = [
     { icon: Instagram, href: "#", label: "Instagram" },
     { icon: Youtube, href: "#", label: "YouTube" },
-    { icon: Mail, href: "mailto:hello@sursamyam.com", label: "Email" },
+    { icon: Mail, href: "mailto:sursamyam@gmail.com", label: "Email" },
   ];
 
   const quickLinks = [
     { href: "#about", label: "About" },
-    { href: "#music", label: "The Music" },
     { href: "#teacher", label: "Your Teacher" },
     { href: "#classes", label: "Classes" },
     { href: "/syllabus", label: "Syllabus" },
@@ -81,7 +80,7 @@ const Footer = () => {
                 ))}
               </div>
               <p className="text-sm text-[#D9CDB8]">
-                Based in Mumbai, India<br />
+                Based in Sarjapur, Bangalore, India<br />
                 Teaching globally via online sessions
               </p>
             </div>

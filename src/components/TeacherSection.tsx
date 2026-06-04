@@ -1,44 +1,34 @@
 import { Badge } from "@/components/ui/badge";
 import { Heart, GraduationCap } from "lucide-react";
-import teacherImage from "@/assets/teacher.jpg";
-
-const placeholderImage =
-  "data:image/svg+xml;utf8," +
-  encodeURIComponent(`
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000">
-      <defs>
-        <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
-          <stop offset="0%" stop-color="#7B848C" />
-          <stop offset="100%" stop-color="#5A6268" />
-        </linearGradient>
-      </defs>
-      <rect width="800" height="1000" fill="url(#bg)"/>
-      <circle cx="400" cy="330" r="110" fill="#DDE2E6" opacity="0.9"/>
-      <path d="M240 790c26-144 124-220 160-220s134 76 160 220" fill="#C9D0D5" opacity="0.85"/>
-    </svg>
-  `);
+import sonalinImage from "@/assets/teacher-sonalin.jpeg";
+import shravanthiImage from "@/assets/teacher-shravanthi.jpeg";
 
 const teachers = [
   {
-    name: "A Teacher Who is Also a Student",
-    role: "Hindustani Vocal — 10+ Years",
-    bio: "With over a decade of dedicated practice in Hindustani classical vocal music, I believe that teaching and learning are two sides of the same coin. Every lesson I give is also a lesson I receive.",
-    image: teacherImage,
-    imageAlt: "Singing teacher portrait",
+    name: "Sonalin Subhadarshini",
+    role: "A Lifelong Student of the Craft",
+    bio: "An MBA by education and a musician by passion, she founded Sur Samyam with a clear vision to build a new age system for an age old craft. With over a decade of dedicated practice in Hindustani classical vocal music, she leads every class as both a teacher and a forever student, knowing that the deeper you go into this art, the more it has to offer.",
+    image: sonalinImage,
+    imageAlt: "Sonalin Subhadarshini portrait",
+    imagePosition: "50% 35%",
     overlayBadges: [
       { label: "Passionate", icon: Heart, className: "border border-[#C9922A] bg-[#FDF6EC] text-[#C9922A]" },
       { label: "Ever-Learning", icon: GraduationCap, className: "border border-[#C9922A] bg-[#FDF6EC] text-[#C9922A]" },
     ],
-    statBadges: ["10+ Years Practice", "100+ Students", "Beginner Friendly"],
+    statBadges: ["10+ Years Practice", "Warm Guidance", "Beginner Friendly"],
   },
   {
-    name: "Teacher Name",
-    role: "Hindustani Vocal — Joining Soon",
-    bio: "Bio coming soon — another passionate guide joining the Sur Samyam family.",
-    image: placeholderImage,
-    imageAlt: "Placeholder portrait for upcoming teacher",
-    overlayBadges: [],
-    statBadges: ["Warm Guidance", "Coming Soon", "Beginner Friendly"],
+    name: "Shravanthi S Karli",
+    role: "Carrying a Legacy, One Student at a Time",
+    bio: "For her, music is not just an art but her inheritance. Raised in a household where Hindustani classical music was a way of life, she brings over a decade of teaching experience and a deeply personal mission to Sur Samyam - to keep her family's musical tradition alive and share its beauty with every student who walks through the door.",
+    image: shravanthiImage,
+    imageAlt: "Shravanthi S Karli portrait",
+    imagePosition: "50% 38%",
+    overlayBadges: [
+      { label: "Legacy-Led", icon: Heart, className: "border border-[#C9922A] bg-[#FDF6EC] text-[#C9922A]" },
+      { label: "Experienced", icon: GraduationCap, className: "border border-[#C9922A] bg-[#FDF6EC] text-[#C9922A]" },
+    ],
+    statBadges: ["100+ Students", "Tradition Rooted", "Beginner Friendly"],
   },
 ];
 
@@ -86,6 +76,7 @@ function TeacherCard({
     bio: string;
     image: string;
     imageAlt: string;
+    imagePosition: string;
     overlayBadges: Array<{
       label: string;
       icon: typeof Heart;
@@ -100,7 +91,8 @@ function TeacherCard({
         <img
           src={teacher.image}
           alt={teacher.imageAlt}
-          className="block h-full w-full object-cover object-top"
+          className="block h-full w-full object-cover"
+          style={{ objectPosition: teacher.imagePosition }}
         />
         {teacher.overlayBadges.length > 0 && (
           <div className="absolute bottom-4 left-4 right-4 flex flex-wrap gap-2">

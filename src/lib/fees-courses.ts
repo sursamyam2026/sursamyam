@@ -24,8 +24,8 @@ export const adultCourses: FeeCourse[] = [
   {
     name: "One-on-One",
     track: "adults",
-    monthlyRupee: 4000,
-    monthlyRupeeByFormat: { online: 4000, offline: 5000 },
+    monthlyRupee: 5000,
+    monthlyRupeeByFormat: { online: 5000, offline: 5000 },
     registrationRupee: 1000,
     description: "8 classes per month – 1 Hour each.",
     highlight: true,
@@ -33,8 +33,8 @@ export const adultCourses: FeeCourse[] = [
   {
     name: "Group",
     track: "adults",
-    monthlyRupee: 2000,
-    monthlyRupeeByFormat: { online: 2000, offline: 2500 },
+    monthlyRupee: 2500,
+    monthlyRupeeByFormat: { online: 2500, offline: 2500 },
     registrationRupee: 1000,
     description: "8 classes per month – 1 Hour each.",
   },
@@ -44,8 +44,8 @@ export const kidsCourses: FeeCourse[] = [
   {
     name: "One-on-One",
     track: "kids",
-    monthlyRupee: 4000,
-    monthlyRupeeByFormat: { online: 4000, offline: 5000 },
+    monthlyRupee: 5000,
+    monthlyRupeeByFormat: { online: 5000, offline: 5000 },
     registrationRupee: 1000,
     description: "8 classes per month – 1 Hour each.",
     highlight: true,
@@ -53,8 +53,8 @@ export const kidsCourses: FeeCourse[] = [
   {
     name: "Group",
     track: "kids",
-    monthlyRupee: 2000,
-    monthlyRupeeByFormat: { online: 2000, offline: 2500 },
+    monthlyRupee: 2500,
+    monthlyRupeeByFormat: { online: 2500, offline: 2500 },
     registrationRupee: 1000,
     description: "8 classes per month – 1 Hour each.",
   },

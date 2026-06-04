@@ -86,8 +86,8 @@ const EnrollStart = () => {
       email,
       phone: normalizePhoneNumber(phone),
       age,
-      city,
-      country,
+      city: city.trim(),
+      country: country.trim(),
       track,
       courseName: fc.name,
       format,
@@ -179,9 +179,9 @@ const EnrollStart = () => {
                 <Input
                   id="enroll-city"
                   value={city}
-                  onChange={(e) => setCity(e.target.value)}
+                  onChange={(e) => setCity(e.target.value.replace(/[0-9]/g, ""))}
                   autoComplete="address-level2"
-                  placeholder="Mumbai"
+                  placeholder="Bangalore"
                   required
                 />
               </div>
