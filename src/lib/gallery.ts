@@ -25,7 +25,15 @@ interface GalleryImageRow {
 }
 
 const KEY = "swarshiksha:gallery";
+const CACHE_KEY = "swarshiksha:gallery:cache";
 const EVENT = "swarshiksha:gallery:changed";
+const CACHE_TTL_MS = 1000 * 60 * 20;
+let memoryCache: GalleryCache | null = null;
+
+interface GalleryCache {
+  savedAt: number;
+  images: GalleryImage[];
+}
 
 function notifyGalleryChanged() {
   window.dispatchEvent(new Event(EVENT));
@@ -79,21 +87,102 @@ function writeUploads(images: GalleryImage[]) {
   notifyGalleryChanged();
 }
 
-export const galleryStore = {
-  async list(limit = 60): Promise<GalleryImage[]> {
-    if (supabase) {
-      const { data, error } = await supabase
-        .from("gallery_images")
-        .select("id,title,src,description,created_at,source")
-        .order("created_at", { ascending: false })
-        .range(0, Math.max(limit - 1, 0));
-      if (error) throw error;
-      return ((data ?? []) as GalleryImageRow[]).map(fromRow);
+function readCache(): GalleryCache | null {
+  if (!supabase) return null;
+  if (memoryCache) return memoryCache;
+
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<GalleryCache>;
+    if (typeof parsed.savedAt !== "number" || !Array.isArray(parsed.images)) {
+      return null;
     }
 
-    return readUploads().sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-    ).slice(0, limit);
+    const images = parsed.images.map(coerceImage).filter(Boolean) as GalleryImage[];
+    if (images.length === 0) return null;
+    memoryCache = { savedAt: parsed.savedAt, images };
+    return memoryCache;
+  } catch {
+    return null;
+  }
+}
+
+function writeCache(images: GalleryImage[]) {
+  if (!supabase) return;
+
+  memoryCache = {
+    savedAt: Date.now(),
+    images,
+  };
+
+  try {
+    localStorage.setItem(
+      CACHE_KEY,
+      JSON.stringify(memoryCache satisfies GalleryCache),
+    );
+  } catch {
+    localStorage.removeItem(CACHE_KEY);
+  }
+}
+
+function clearCache() {
+  memoryCache = null;
+  localStorage.removeItem(CACHE_KEY);
+}
+
+async function fetchImages(limit: number): Promise<GalleryImage[]> {
+  if (supabase) {
+    const { data, error } = await supabase
+      .from("gallery_images")
+      .select("id,title,src,description,created_at,source")
+      .order("created_at", { ascending: false })
+      .range(0, Math.max(limit - 1, 0));
+    if (error) throw error;
+
+    const images = ((data ?? []) as GalleryImageRow[]).map(fromRow);
+    writeCache(images);
+    return images;
+  }
+
+  return readUploads().sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+  ).slice(0, limit);
+}
+
+export const galleryStore = {
+  getCached(limit = 60): GalleryImage[] {
+    if (!supabase) {
+      return readUploads().sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      ).slice(0, limit);
+    }
+
+    return readCache()?.images.slice(0, limit) ?? [];
+  },
+
+  hasFreshCache(limit = 60): boolean {
+    const cache = readCache();
+    return Boolean(
+      cache &&
+        Date.now() - cache.savedAt < CACHE_TTL_MS &&
+        cache.images.length >= Math.min(limit, 1),
+    );
+  },
+
+  async list(limit = 60, options: { preferCache?: boolean } = {}): Promise<GalleryImage[]> {
+    if (options.preferCache) {
+      const cache = this.getCached(limit);
+      if (cache.length > 0 && this.hasFreshCache(limit)) {
+        return cache;
+      }
+    }
+
+    return fetchImages(limit);
+  },
+
+  async refresh(limit = 60): Promise<GalleryImage[]> {
+    return fetchImages(limit);
   },
 
   async addMany(inputs: GalleryUploadInput[]): Promise<GalleryImage[]> {
@@ -110,6 +199,7 @@ export const galleryStore = {
         )
         .select("id,title,src,description,created_at,source");
       if (error) throw error;
+      clearCache();
       notifyGalleryChanged();
       return ((data ?? []) as GalleryImageRow[]).map(fromRow);
     }
@@ -130,6 +220,7 @@ export const galleryStore = {
     if (supabase) {
       const { error } = await supabase.from("gallery_images").delete().eq("id", id);
       if (error) throw error;
+      clearCache();
       notifyGalleryChanged();
       return;
     }
@@ -138,7 +229,10 @@ export const galleryStore = {
   },
 
   subscribe(cb: () => void): () => void {
-    const handler = () => cb();
+    const handler = () => {
+      clearCache();
+      cb();
+    };
     window.addEventListener(EVENT, handler);
 
     if (supabase) {

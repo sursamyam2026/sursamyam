@@ -4,10 +4,15 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useGallery } from "@/hooks/use-gallery";
 import { ArrowLeft, Image as ImageIcon, UploadCloud } from "lucide-react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 
+const PAGE_SIZE = 24;
+
 const Gallery = () => {
-  const { images, isLoading, error } = useGallery();
+  const [visibleLimit, setVisibleLimit] = useState(PAGE_SIZE);
+  const { images, isLoading, error } = useGallery(visibleLimit);
+  const canLoadMore = images.length >= visibleLimit;
 
   return (
     <div className="min-h-screen bg-[#FDF6EC]">
@@ -70,38 +75,53 @@ const Gallery = () => {
               </CardContent>
             </Card>
           ) : (
-            <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-              {images.map((image) => (
-                <Card
-                  key={image.id}
-                  variant="elevated"
-                  className="group overflow-hidden border-[#E0C88B] bg-white"
-                >
-                  <div className="aspect-[4/3] overflow-hidden bg-[#F5ECD7]">
-                    <img
-                      src={image.src}
-                      alt={image.title}
-                      loading="lazy"
-                      decoding="async"
-                      className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                    />
-                  </div>
-                  <CardContent className="space-y-2 p-5">
-                    <div className="flex items-center justify-between gap-3">
-                      <h3 className="font-display text-xl font-semibold text-[#1B4D3E]">
-                        {image.title}
-                      </h3>
-                      <span className="rounded-full bg-[#F5ECD7] px-3 py-1 text-xs font-medium uppercase tracking-[0.2em] text-[#8B621D]">
-                        New
-                      </span>
+            <>
+              <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+                {images.map((image) => (
+                  <Card
+                    key={image.id}
+                    variant="elevated"
+                    className="group overflow-hidden border-[#E0C88B] bg-white"
+                  >
+                    <div className="aspect-[4/3] overflow-hidden bg-[#F5ECD7]">
+                      <img
+                        src={image.src}
+                        alt={image.title}
+                        loading="lazy"
+                        decoding="async"
+                        className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                      />
                     </div>
-                    <p className="text-sm leading-6 text-[#4A5E52]">
-                      {image.description || "A gallery image from Sur Samyam."}
-                    </p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                    <CardContent className="space-y-2 p-5">
+                      <div className="flex items-center justify-between gap-3">
+                        <h3 className="font-display text-xl font-semibold text-[#1B4D3E]">
+                          {image.title}
+                        </h3>
+                        <span className="rounded-full bg-[#F5ECD7] px-3 py-1 text-xs font-medium uppercase tracking-[0.2em] text-[#8B621D]">
+                          New
+                        </span>
+                      </div>
+                      <p className="text-sm leading-6 text-[#4A5E52]">
+                        {image.description || "A gallery image from Sur Samyam."}
+                      </p>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              {canLoadMore ? (
+                <div className="mt-10 flex justify-center">
+                  <Button
+                    variant="outline"
+                    className="border-[#C9922A] bg-white/80"
+                    onClick={() => setVisibleLimit((limit) => limit + PAGE_SIZE)}
+                    disabled={isLoading}
+                  >
+                    Load more
+                  </Button>
+                </div>
+              ) : null}
+            </>
           )}
         </div>
       </main>

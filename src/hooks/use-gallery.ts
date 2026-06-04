@@ -2,14 +2,17 @@ import { useCallback, useEffect, useState } from "react";
 import { galleryStore, type GalleryImage } from "@/lib/gallery";
 
 export function useGallery(limit = 60) {
-  const [images, setImages] = useState<GalleryImage[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [images, setImages] = useState<GalleryImage[]>(() => galleryStore.getCached(limit));
+  const [isLoading, setIsLoading] = useState(() => galleryStore.getCached(limit).length === 0);
   const [error, setError] = useState<Error | null>(null);
 
-  const refresh = useCallback(async () => {
+  const refresh = useCallback(async (force = false) => {
     try {
       setError(null);
-      setImages(await galleryStore.list(limit));
+      const nextImages = force
+        ? await galleryStore.refresh(limit)
+        : await galleryStore.list(limit, { preferCache: true });
+      setImages(nextImages);
     } catch (err) {
       setError(err instanceof Error ? err : new Error("Unable to load gallery."));
     } finally {
@@ -18,11 +21,19 @@ export function useGallery(limit = 60) {
   }, [limit]);
 
   useEffect(() => {
-    void refresh();
-    return galleryStore.subscribe(() => {
+    setImages(galleryStore.getCached(limit));
+    if (!galleryStore.hasFreshCache(limit)) {
+      void refresh(true);
+    } else {
+      setIsLoading(false);
       void refresh();
+    }
+
+    return galleryStore.subscribe(() => {
+      setIsLoading(true);
+      void refresh(true);
     });
-  }, [refresh]);
+  }, [limit, refresh]);
 
   return { images, isLoading, error, refresh };
 }

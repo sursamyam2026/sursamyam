@@ -6,7 +6,9 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useGallery } from "@/hooks/use-gallery";
 import { galleryStore } from "@/lib/gallery";
-import { ImagePlus, Trash2, UploadCloud } from "lucide-react";
+import { Trash2, UploadCloud } from "lucide-react";
+
+const PAGE_SIZE = 24;
 
 function titleFromFilename(name: string): string {
   return name
@@ -53,7 +55,9 @@ function compressImageAsDataUrl(file: File): Promise<string> {
 }
 
 const GalleryManager = () => {
-  const { images, isLoading, error, refresh } = useGallery();
+  const [visibleLimit, setVisibleLimit] = useState(PAGE_SIZE);
+  const { images, isLoading, error, refresh } = useGallery(visibleLimit);
+  const canLoadMore = images.length >= visibleLimit;
   const uploadCount = useMemo(
     () => images.filter((image) => image.source === "upload").length,
     [images],
@@ -238,6 +242,19 @@ const GalleryManager = () => {
           </Card>
         ))}
       </div>
+
+      {canLoadMore ? (
+        <div className="flex justify-center">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setVisibleLimit((limit) => limit + PAGE_SIZE)}
+            disabled={isLoading}
+          >
+            Load more images
+          </Button>
+        </div>
+      ) : null}
     </div>
   );
 };
