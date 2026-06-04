@@ -80,19 +80,20 @@ function writeUploads(images: GalleryImage[]) {
 }
 
 export const galleryStore = {
-  async list(): Promise<GalleryImage[]> {
+  async list(limit = 60): Promise<GalleryImage[]> {
     if (supabase) {
       const { data, error } = await supabase
         .from("gallery_images")
         .select("id,title,src,description,created_at,source")
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .range(0, Math.max(limit - 1, 0));
       if (error) throw error;
       return ((data ?? []) as GalleryImageRow[]).map(fromRow);
     }
 
     return readUploads().sort(
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-    );
+    ).slice(0, limit);
   },
 
   async addMany(inputs: GalleryUploadInput[]): Promise<GalleryImage[]> {

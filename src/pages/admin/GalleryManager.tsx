@@ -17,18 +17,38 @@ function titleFromFilename(name: string): string {
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
-function readFileAsDataUrl(file: File): Promise<string> {
+function compressImageAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === "string") {
-        resolve(reader.result);
+    const image = new Image();
+    const objectUrl = URL.createObjectURL(file);
+
+    image.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+
+      const maxSize = 1600;
+      const scale = Math.min(1, maxSize / Math.max(image.width, image.height));
+      const width = Math.max(1, Math.round(image.width * scale));
+      const height = Math.max(1, Math.round(image.height * scale));
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+
+      const context = canvas.getContext("2d");
+      if (!context) {
+        reject(new Error("Could not prepare the selected image."));
         return;
       }
-      reject(new Error("Could not read the selected file."));
+
+      context.drawImage(image, 0, 0, width, height);
+      resolve(canvas.toDataURL("image/jpeg", 0.82));
     };
-    reader.onerror = () => reject(new Error("Could not read the selected file."));
-    reader.readAsDataURL(file);
+
+    image.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error("Could not read the selected image."));
+    };
+
+    image.src = objectUrl;
   });
 }
 
@@ -66,7 +86,7 @@ const GalleryManager = () => {
       const uploads = await Promise.all(
         selectedFiles.map(async (file) => ({
           title: titleFromFilename(file.name),
-          src: await readFileAsDataUrl(file),
+          src: await compressImageAsDataUrl(file),
           description: description.trim() || undefined,
         })),
       );
@@ -187,7 +207,13 @@ const GalleryManager = () => {
         ) : images.map((image) => (
           <Card key={image.id} className="overflow-hidden">
             <div className="aspect-[4/3] overflow-hidden bg-[#F5ECD7]">
-              <img src={image.src} alt={image.title} className="h-full w-full object-cover" />
+              <img
+                src={image.src}
+                alt={image.title}
+                loading="lazy"
+                decoding="async"
+                className="h-full w-full object-cover"
+              />
             </div>
             <CardContent className="space-y-4 p-5">
               <div className="space-y-1">

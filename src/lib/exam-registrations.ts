@@ -42,6 +42,13 @@ function fromRow(row: ExamRegistrationRow): ExamRegistration {
   };
 }
 
+function maybeFromRow(row: unknown): ExamRegistration | null {
+  if (!row || typeof row !== "object") return null;
+  const item = row as Partial<ExamRegistrationRow>;
+  if (!item.id || !item.roll_number || !item.created_at) return null;
+  return fromRow(item as ExamRegistrationRow);
+}
+
 function read(): ExamRegistration[] {
   try {
     const raw = localStorage.getItem(KEY);
@@ -84,7 +91,7 @@ export const examRegistrationsStore = {
         p_roll_number: rollNumber,
       }).maybeSingle();
       if (error) throw error;
-      return data ? fromRow(data as ExamRegistrationRow) : null;
+      return maybeFromRow(data);
     }
 
     return (
@@ -101,7 +108,7 @@ export const examRegistrationsStore = {
       }).maybeSingle();
       if (error) throw error;
       notifyExamRegistrationsChanged();
-      return data ? fromRow(data as ExamRegistrationRow) : null;
+      return maybeFromRow(data);
     }
 
     if (await this.findByRollNumber(rollNumber)) return null;

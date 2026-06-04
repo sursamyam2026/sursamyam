@@ -174,11 +174,16 @@ stable
 security definer
 set search_path = public
 as $$
-  select *
-  from public.exam_registrations
-  where lower(roll_number) = lower(trim(coalesce(p_roll_number, '')))
-  order by created_at desc
-  limit 1;
+  select coalesce(
+    (
+      select registration
+      from public.exam_registrations registration
+      where lower(registration.roll_number) = lower(trim(coalesce(p_roll_number, '')))
+      order by registration.created_at desc
+      limit 1
+    ),
+    null::public.exam_registrations
+  );
 $$;
 
 create or replace function public.submit_exam_registration(p_roll_number text)
@@ -197,7 +202,7 @@ begin
   limit 1;
 
   if v_registration.id is not null then
-    return null;
+    return null::public.exam_registrations;
   end if;
 
   insert into public.exam_registrations (roll_number)
