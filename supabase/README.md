@@ -58,6 +58,13 @@ on conflict (id) do nothing;
 If you previously ran the temporary phase-1 schema, run `supabase/admin-auth.sql`
 in SQL Editor to add the admin policies and public lead RPC functions.
 
+If the admin status dropdown shows "Unable to update lead" when selecting
+Discontinued, run `supabase/discontinued-status.sql` once in SQL Editor to update
+the existing lead status constraint.
+
+To add attendance tracking to an existing Supabase project, run
+`supabase/attendance.sql` once in SQL Editor after admin auth is configured.
+
 ## Gallery And Exam Registrations
 
 Gallery metadata is stored in `gallery_images`. The current app stores uploaded

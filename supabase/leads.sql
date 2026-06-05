@@ -11,8 +11,13 @@ create table if not exists public.leads (
   roll_number text,
   enrolled_at timestamptz,
   constraint leads_status_check check (
-    status in ('new', 'contacted', 'converted', 'registered', 'enrolled', 'declined')
+    status in ('new', 'contacted', 'converted', 'registered', 'enrolled', 'discontinued', 'declined')
   )
+);
+
+alter table public.leads drop constraint if exists leads_status_check;
+alter table public.leads add constraint leads_status_check check (
+  status in ('new', 'contacted', 'converted', 'registered', 'enrolled', 'discontinued', 'declined')
 );
 
 create index if not exists leads_created_at_idx on public.leads (created_at desc);

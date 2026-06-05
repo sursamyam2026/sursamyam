@@ -1,18 +1,46 @@
 import { Card } from "@/components/ui/card";
+import { useAttendance } from "@/hooks/use-attendance";
 import { useExamRegistrations } from "@/hooks/use-exam-registrations";
 import { useLeads } from "@/hooks/use-leads";
-import { Inbox, Users, Sparkles } from "lucide-react";
+import { CalendarCheck, Inbox, Users, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
+
+const leadStatusLabels: Record<string, string> = {
+  new: "New",
+  contacted: "Contacted",
+  converted: "Converted",
+  registered: "Registered",
+  enrolled: "Enrolled",
+  discontinued: "Discontinued",
+  declined: "Declined",
+};
 
 const Dashboard = () => {
   const { leads, isLoading, error } = useLeads();
+  const { records: attendanceRecords } = useAttendance();
   const { registrations: examRegistrations } = useExamRegistrations();
   const newCount = leads.filter((l) => l.status === "new").length;
+  const enrolledCount = leads.filter((l) => l.status === "enrolled").length;
+  const latestAttendanceDate = attendanceRecords[0]?.classDate;
+  const latestAttendanceRecords = latestAttendanceDate
+    ? attendanceRecords.filter((record) => record.classDate === latestAttendanceDate)
+    : [];
+  const latestPresentCount = latestAttendanceRecords.filter((record) => record.status === "present").length;
+  const latestAttendanceRate =
+    latestAttendanceRecords.length === 0
+      ? 0
+      : Math.round((latestPresentCount / latestAttendanceRecords.length) * 100);
   const recent = leads.slice(0, 5);
 
   const stats = [
     { label: "New Inquiries", value: newCount, icon: Inbox, color: "text-primary" },
-    { label: "Total Leads", value: leads.length, icon: Users, color: "text-gold" },
+    { label: "Enrolled Students", value: enrolledCount, icon: Users, color: "text-gold" },
+    {
+      label: "Latest Attendance",
+      value: latestAttendanceRecords.length === 0 ? "-" : `${latestAttendanceRate}%`,
+      icon: CalendarCheck,
+      color: "text-green-700",
+    },
     {
       label: "Exam Registrations",
       value: examRegistrations.length,
@@ -30,7 +58,7 @@ const Dashboard = () => {
         </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {stats.map((s) => (
           <Card key={s.label} variant="elevated" className="p-6">
             <div className="flex items-center justify-between">
@@ -75,7 +103,9 @@ const Dashboard = () => {
                   <p className="text-xs text-muted-foreground">
                     {new Date(l.createdAt).toLocaleDateString()}
                   </p>
-                  <span className="text-xs capitalize text-primary">{l.status}</span>
+                  <span className="text-xs text-primary">
+                    {leadStatusLabels[l.status] ?? l.status}
+                  </span>
                 </div>
               </li>
             ))}

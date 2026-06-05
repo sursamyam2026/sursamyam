@@ -9,6 +9,7 @@ import {
   Music,
   ImagePlus,
   FileCheck,
+  CalendarCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
@@ -17,6 +18,7 @@ import { cn } from "@/lib/utils";
 const navItems = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard, end: true },
   { to: "/admin/leads", label: "Leads", icon: Users, end: false },
+  { to: "/admin/attendance", label: "Attendance", icon: CalendarCheck, end: false },
   { to: "/admin/exam-registrations", label: "Exam Registrations", icon: FileCheck, end: false },
   { to: "/admin/gallery", label: "Gallery", icon: ImagePlus, end: false },
 ];

@@ -11,8 +11,13 @@ create table if not exists public.leads (
   roll_number text,
   enrolled_at timestamptz,
   constraint leads_status_check check (
-    status in ('new', 'contacted', 'converted', 'registered', 'enrolled', 'declined')
+    status in ('new', 'contacted', 'converted', 'registered', 'enrolled', 'discontinued', 'declined')
   )
+);
+
+alter table public.leads drop constraint if exists leads_status_check;
+alter table public.leads add constraint leads_status_check check (
+  status in ('new', 'contacted', 'converted', 'registered', 'enrolled', 'discontinued', 'declined')
 );
 
 create index if not exists leads_created_at_idx on public.leads (created_at desc);
@@ -52,6 +57,37 @@ on public.exam_registrations (lower(roll_number));
 create index if not exists exam_registrations_created_at_idx
 on public.exam_registrations (created_at desc);
 
+create table if not exists public.class_sessions (
+  id uuid primary key default gen_random_uuid(),
+  class_date date not null,
+  class_time time not null,
+  course_type text not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint class_sessions_unique unique (class_date, class_time, course_type)
+);
+
+create index if not exists class_sessions_date_time_idx
+on public.class_sessions (class_date desc, class_time desc);
+
+create table if not exists public.attendance_records (
+  id uuid primary key default gen_random_uuid(),
+  session_id uuid not null references public.class_sessions(id) on delete cascade,
+  lead_id uuid not null references public.leads(id) on delete cascade,
+  status text not null default 'present',
+  notes text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint attendance_records_status_check check (status in ('present', 'absent')),
+  constraint attendance_records_session_lead_unique unique (session_id, lead_id)
+);
+
+create index if not exists attendance_records_session_id_idx
+on public.attendance_records (session_id);
+
+create index if not exists attendance_records_lead_id_idx
+on public.attendance_records (lead_id);
+
 create table if not exists public.student_profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   email text not null unique,
@@ -76,6 +112,8 @@ alter table public.leads enable row level security;
 alter table public.roll_meta enable row level security;
 alter table public.gallery_images enable row level security;
 alter table public.exam_registrations enable row level security;
+alter table public.class_sessions enable row level security;
+alter table public.attendance_records enable row level security;
 alter table public.student_profiles enable row level security;
 alter table public.admin_users enable row level security;
 
@@ -228,6 +266,8 @@ drop policy if exists "Admins can manage roll metadata" on public.roll_meta;
 drop policy if exists "Public can read gallery images" on public.gallery_images;
 drop policy if exists "Admins can manage gallery images" on public.gallery_images;
 drop policy if exists "Admins can manage exam registrations" on public.exam_registrations;
+drop policy if exists "Admins can manage class sessions" on public.class_sessions;
+drop policy if exists "Admins can manage attendance records" on public.attendance_records;
 drop policy if exists "Students can read own profile" on public.student_profiles;
 drop policy if exists "Students can update own profile" on public.student_profiles;
 drop policy if exists "Students can insert own profile" on public.student_profiles;
@@ -258,6 +298,18 @@ with check (public.is_admin());
 
 create policy "Admins can manage exam registrations"
 on public.exam_registrations for all
+to authenticated
+using (public.is_admin())
+with check (public.is_admin());
+
+create policy "Admins can manage class sessions"
+on public.class_sessions for all
+to authenticated
+using (public.is_admin())
+with check (public.is_admin());
+
+create policy "Admins can manage attendance records"
+on public.attendance_records for all
 to authenticated
 using (public.is_admin())
 with check (public.is_admin());

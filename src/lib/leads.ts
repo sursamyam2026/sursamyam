@@ -44,6 +44,7 @@ const VALID_STATUSES = new Set<LeadStatus>([
   "converted",
   "registered",
   "enrolled",
+  "discontinued",
   "declined",
 ]);
 
