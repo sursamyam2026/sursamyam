@@ -24,15 +24,18 @@ export interface ClassSession {
   classDay: string;
   classTime: string;
   courseType: string;
+  batch?: string;
   createdAt: string;
   updatedAt: string;
 }
 
 export interface ClassSessionInput {
+  id?: string;
   classDate: string;
   classDay: string;
   classTime: string;
   courseType: string;
+  batch?: string;
 }
 
 export interface ClassRosterMember {

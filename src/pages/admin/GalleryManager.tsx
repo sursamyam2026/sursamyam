@@ -221,15 +221,15 @@ const GalleryManager = () => {
             </div>
             <CardContent className="space-y-4 p-5">
               <div className="space-y-1">
-                <div className="flex items-center justify-between gap-3">
-                  <h2 className="font-display text-xl font-semibold text-[#1B4D3E]">
+                <div className="flex items-start justify-between gap-3">
+                  <h2 className="min-w-0 break-words font-display text-xl font-semibold text-[#1B4D3E]">
                     {image.title}
                   </h2>
-                  <span className="rounded-full bg-[#F5ECD7] px-3 py-1 text-xs font-medium uppercase tracking-[0.2em] text-[#8B621D]">
+                  <span className="shrink-0 rounded-full bg-[#F5ECD7] px-3 py-1 text-xs font-medium uppercase tracking-[0.2em] text-[#8B621D]">
                     Uploaded
                   </span>
                 </div>
-                <p className="text-sm text-muted-foreground">
+                <p className="break-words text-sm text-muted-foreground">
                   {image.description || "No description added."}
                 </p>
               </div>

@@ -350,6 +350,25 @@ const supabaseLeadStore: LeadRepository = {
     return { lead: fromRow(data as LeadRow), assignedRollNumber };
   },
 
+  async updateDetails(id, input) {
+    if (!supabase) return undefined;
+    const updates: Record<string, string | null> = {};
+    if (input.name !== undefined) updates.name = input.name;
+    if (input.phone !== undefined) updates.phone = input.phone || null;
+    if (input.message !== undefined) updates.message = input.message;
+
+    const { data, error } = await supabase
+      .from("leads")
+      .update(updates)
+      .eq("id", id)
+      .select("id,name,email,phone,message,status,created_at,roll_number,enrolled_at")
+      .single();
+
+    if (error) throw error;
+    window.dispatchEvent(new Event(EVENT));
+    return fromRow(data as LeadRow);
+  },
+
   async remove(id) {
     if (!supabase) return;
     const { error } = await supabase.from("leads").delete().eq("id", id);
@@ -485,6 +504,20 @@ const localLeadStore: LeadRepository = {
     leads[index] = updated;
     writeLocal(leads);
     return { lead: updated, assignedRollNumber };
+  },
+
+  async updateDetails(id, input) {
+    const leads = readLocal();
+    const index = leads.findIndex((l) => l.id === id);
+    if (index === -1) return undefined;
+
+    const updated: Lead = {
+      ...leads[index],
+      ...input,
+    };
+    leads[index] = updated;
+    writeLocal(leads);
+    return updated;
   },
 
   async remove(id) {

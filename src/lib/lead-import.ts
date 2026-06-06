@@ -13,6 +13,7 @@ export interface ParsedLeadImport {
   track?: LeadImportTrack;
   courseName?: string;
   format?: LeadImportFormat;
+  batch?: string;
   message: string;
   status: LeadStatus;
 }
@@ -66,6 +67,10 @@ const HEADER_ALIASES: Record<string, keyof ParsedLeadImport> = {
   mode: "format",
   classformat: "format",
   coursetype: "format",
+  batch: "batch",
+  batchname: "batch",
+  group: "batch",
+  groupname: "batch",
   status: "status",
   leadstatus: "status",
 };
@@ -165,12 +170,14 @@ export async function parseLeadImportFile(file: File): Promise<LeadImportParseRe
     const trackIndex = columnMap.get("track");
     const courseIndex = columnMap.get("courseName");
     const formatIndex = columnMap.get("format");
+    const batchIndex = columnMap.get("batch");
     const messageIndex = columnMap.get("message");
     const statusIndex = columnMap.get("status");
     const status = normalizeStatus(statusIndex === undefined ? "" : row[statusIndex]);
     const track = normalizeTrack(trackIndex === undefined ? "" : row[trackIndex]);
     const courseName = courseIndex === undefined ? "" : cellText(row[courseIndex]);
     const format = normalizeFormat(formatIndex === undefined ? "" : row[formatIndex]);
+    const batch = batchIndex === undefined ? "" : cellText(row[batchIndex]);
 
     if (!name) {
       errors.push(`Row ${rowNumber}: name is required.`);
@@ -206,6 +213,11 @@ export async function parseLeadImportFile(file: File): Promise<LeadImportParseRe
       return;
     }
 
+    if (status === "enrolled" && !batch) {
+      errors.push(`Row ${rowNumber}: batch is required for enrolled students.`);
+      return;
+    }
+
     if (seenEmails.has(email)) {
       errors.push(`Row ${rowNumber}: duplicate email in file.`);
       return;
@@ -222,6 +234,7 @@ export async function parseLeadImportFile(file: File): Promise<LeadImportParseRe
       track: track ?? undefined,
       courseName: courseName || undefined,
       format: format ?? undefined,
+      batch: batch || undefined,
       message: messageIndex === undefined ? "" : cellText(row[messageIndex]),
       status,
     });

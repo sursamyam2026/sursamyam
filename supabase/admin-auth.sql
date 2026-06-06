@@ -17,6 +17,7 @@ create table if not exists public.class_sessions (
   class_day text,
   class_time time not null,
   course_type text not null,
+  batch text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   constraint class_sessions_unique unique (class_date, class_time)
@@ -30,6 +31,9 @@ on public.class_sessions (class_date, class_time);
 
 alter table public.class_sessions
 add column if not exists class_day text;
+
+alter table public.class_sessions
+add column if not exists batch text;
 
 update public.class_sessions
 set class_day = trim(to_char(class_date, 'Day'))

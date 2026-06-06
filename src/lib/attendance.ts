@@ -22,6 +22,7 @@ interface SessionRow {
   class_day: string;
   class_time: string;
   course_type: string;
+  batch: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -88,6 +89,7 @@ function fromSessionRow(row: SessionRow): ClassSession {
     classDay: row.class_day || dayLabel(row.class_date),
     classTime: row.class_time,
     courseType: row.course_type,
+    batch: row.batch ?? undefined,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -130,6 +132,7 @@ function coerceSession(raw: unknown): ClassSession | null {
     classDay: classDay || dayLabel(classDate),
     classTime,
     courseType,
+    batch: typeof item.batch === "string" ? item.batch : undefined,
     createdAt: typeof item.createdAt === "string" ? item.createdAt : new Date().toISOString(),
     updatedAt: typeof item.updatedAt === "string" ? item.updatedAt : new Date().toISOString(),
   };
@@ -250,7 +253,7 @@ const supabaseAttendanceStore: AttendanceRepository = {
     if (!supabase) return [];
     const { data, error } = await supabase
       .from("class_sessions")
-      .select("id,class_date,class_day,class_time,course_type,created_at,updated_at")
+      .select("id,class_date,class_day,class_time,course_type,batch,created_at,updated_at")
       .order("class_date", { ascending: false })
       .order("class_time", { ascending: false });
 
@@ -307,7 +310,7 @@ const supabaseAttendanceStore: AttendanceRepository = {
     const now = new Date().toISOString();
     const { data: existingRows, error: existingError } = await supabase
       .from("class_sessions")
-      .select("id,class_date,class_day,class_time,course_type,created_at,updated_at")
+      .select("id,class_date,class_day,class_time,course_type,batch,created_at,updated_at")
       .eq("class_date", input.classDate)
       .eq("class_time", input.classTime);
 
@@ -316,20 +319,23 @@ const supabaseAttendanceStore: AttendanceRepository = {
       throw existingError;
     }
 
-    const existing = ((existingRows ?? []) as SessionRow[])[0];
-    if (existing && existing.course_type !== input.courseType) {
+    const existing = ((existingRows ?? []) as SessionRow[]).find((row) => row.id !== input.id);
+    if (existing) {
       throw new Error(classTimeConflictMessage());
     }
 
-    const query = existing
+    const query = input.id
       ? supabase
           .from("class_sessions")
           .update({
+            class_date: input.classDate,
             class_day: input.classDay,
+            class_time: input.classTime,
             course_type: input.courseType,
+            batch: input.batch?.trim() || null,
             updated_at: now,
           })
-          .eq("id", existing.id)
+          .eq("id", input.id)
       : supabase
           .from("class_sessions")
           .insert({
@@ -337,11 +343,12 @@ const supabaseAttendanceStore: AttendanceRepository = {
             class_day: input.classDay,
             class_time: input.classTime,
             course_type: input.courseType,
+            batch: input.batch?.trim() || null,
             updated_at: now,
           });
 
     const { data, error } = await query
-      .select("id,class_date,class_day,class_time,course_type,created_at,updated_at")
+      .select("id,class_date,class_day,class_time,course_type,batch,created_at,updated_at")
       .single();
 
     if (error) {
@@ -477,18 +484,23 @@ const localAttendanceStore: AttendanceRepository = {
     const sessions = readLocalSessions();
     const existing = sessions.find(
       (session) =>
+        session.id !== input.id &&
         session.classDate === input.classDate &&
         session.classTime === input.classTime,
     );
-    if (existing && existing.courseType !== input.courseType) {
+    if (existing) {
       throw new Error(classTimeConflictMessage());
     }
 
-    const saved: ClassSession = existing
+    const current = input.id ? sessions.find((session) => session.id === input.id) : undefined;
+    const saved: ClassSession = current
       ? {
-          ...existing,
+          ...current,
+          classDate: input.classDate,
           classDay: input.classDay,
+          classTime: input.classTime,
           courseType: input.courseType,
+          batch: input.batch?.trim() || undefined,
           updatedAt: now,
         }
       : {
@@ -497,6 +509,7 @@ const localAttendanceStore: AttendanceRepository = {
           classDay: input.classDay,
           classTime: input.classTime,
           courseType: input.courseType,
+          batch: input.batch?.trim() || undefined,
           createdAt: now,
           updatedAt: now,
         };

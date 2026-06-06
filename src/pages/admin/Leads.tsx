@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Card } from "@/components/ui/card";
 import {
   Table,
@@ -35,7 +35,9 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Download, Eye, Inbox, Trash2, Upload } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Download, Eye, Inbox, Trash2, Upload, Users } from "lucide-react";
 import { useLeads } from "@/hooks/use-leads";
 import { leadsStore, type Lead, type LeadStatus } from "@/lib/leads";
 import { parseLeadImportFile } from "@/lib/lead-import";
@@ -91,9 +93,9 @@ const emptyDescriptionForStatus: Record<LeadStatus, string> = {
 };
 
 const sampleLeadRows = [
-  ["name", "email", "phone", "age", "city", "country", "program", "course", "format", "status", "message"],
-  ["Meera Iyer", "meera@example.com", "+91 9876543211", "26", "Mumbai", "India", "Adults", "One-on-One", "Online", "registered", "Registered through phone inquiry"],
-  ["Kabir Rao", "kabir@example.com", "+91 9876543212", "10", "Delhi", "India", "Kids", "Group", "Offline", "enrolled", "Continuing student"],
+  ["name", "email", "phone", "age", "city", "country", "program", "course", "format", "batch", "status", "message"],
+  ["Meera Iyer", "meera@example.com", "+91 9876543211", "26", "Mumbai", "India", "Adults", "One-on-One", "Online", "", "registered", "Registered through phone inquiry"],
+  ["Kabir Rao", "kabir@example.com", "+91 9876543212", "10", "Delhi", "India", "Kids", "Group", "Offline", "Kids Weekend", "enrolled", "Continuing student"],
 ];
 
 function csvEscape(value: string): string {
@@ -116,6 +118,7 @@ function buildImportedLeadMessage(input: Awaited<ReturnType<typeof parseLeadImpo
     input.courseName
       ? `Course: ${input.courseName}${input.track ? ` (${input.track === "adults" ? "Adults" : "Kids"}${input.format ? ` · ${input.format === "online" ? "Online" : "Offline"}` : ""})` : ""}`
       : "",
+    input.status === "enrolled" && input.batch ? `Batch: ${input.batch}` : "",
     input.age ? `Age: ${input.age}` : "",
     [input.city, input.country].filter(Boolean).join(", "),
   ].filter(Boolean);
@@ -136,7 +139,7 @@ function parseLeadMessage(message: string) {
       const label = rawLabel.trim();
       const value = rest.join(":").trim();
 
-      if (value && ["Course", "Age"].includes(label)) {
+      if (value && ["Course", "Batch", "Age"].includes(label)) {
         details.push({ label, value });
         return;
       }
@@ -152,18 +155,81 @@ function parseLeadMessage(message: string) {
   return { details, notes: notes.join("\n") };
 }
 
+function detailValue(details: { label: string; value: string }[], label: string) {
+  return details.find((detail) => detail.label === label)?.value ?? "";
+}
+
+function leadBatch(message: string) {
+  return detailValue(parseLeadMessage(message).details, "Batch");
+}
+
+function updateMessageBatch(message: string, batch: string) {
+  const trimmedBatch = batch.trim();
+  const lines = message.split("\n");
+  const nextLines: string[] = [];
+  let batchHandled = false;
+
+  lines.forEach((line) => {
+    if (/^Batch:/i.test(line.trim())) {
+      if (trimmedBatch && !batchHandled) {
+        nextLines.push(`Batch: ${trimmedBatch}`);
+        batchHandled = true;
+      }
+      return;
+    }
+
+    nextLines.push(line);
+
+    if (/^Course:/i.test(line.trim()) && trimmedBatch && !batchHandled) {
+      nextLines.push(`Batch: ${trimmedBatch}`);
+      batchHandled = true;
+    }
+  });
+
+  if (trimmedBatch && !batchHandled) {
+    nextLines.unshift(`Batch: ${trimmedBatch}`);
+  }
+
+  return nextLines
+    .filter((line, index, all) => !(line.trim() === "" && all[index - 1]?.trim() === ""))
+    .join("\n")
+    .trim();
+}
+
 const Leads = () => {
   const { leads, isLoading, error, refresh } = useLeads();
   const [selected, setSelected] = useState<Lead | null>(null);
   const [pendingDelete, setPendingDelete] = useState<Lead | null>(null);
   const [isImporting, setIsImporting] = useState(false);
+  const [isSavingBatch, setIsSavingBatch] = useState(false);
+  const [isBulkBatchOpen, setIsBulkBatchOpen] = useState(false);
+  const [isSavingBulkBatch, setIsSavingBulkBatch] = useState(false);
+  const [batchDraft, setBatchDraft] = useState("");
+  const [bulkBatchDraft, setBulkBatchDraft] = useState("");
+  const [selectedLeadIds, setSelectedLeadIds] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const { toast } = useToast();
   const statusGroups = STATUSES.map((status) => ({
     ...status,
     leads: leads.filter((lead) => lead.status === status.value),
   }));
-  const selectedMessage = selected ? parseLeadMessage(selected.message) : null;
+  const selectedMessage = useMemo(
+    () => (selected ? parseLeadMessage(selected.message) : null),
+    [selected],
+  );
+  const selectedRegistrationDetails = useMemo(
+    () => selectedMessage?.details.filter((detail) => detail.label !== "Batch") ?? [],
+    [selectedMessage],
+  );
+
+  useEffect(() => {
+    setBatchDraft(selectedMessage ? detailValue(selectedMessage.details, "Batch") : "");
+  }, [selectedMessage, selected?.id]);
+
+  useEffect(() => {
+    const selectableIds = new Set(leads.filter((lead) => lead.status === "enrolled").map((lead) => lead.id));
+    setSelectedLeadIds((ids) => ids.filter((id) => selectableIds.has(id)));
+  }, [leads]);
 
   const handleStatusChange = async (leadId: string, status: LeadStatus) => {
     try {
@@ -281,6 +347,79 @@ const Leads = () => {
     }
   };
 
+  const handleSaveBatch = async () => {
+    if (!selected || selected.status !== "enrolled") return;
+
+    setIsSavingBatch(true);
+    try {
+      const updated = await leadsStore.updateDetails(selected.id, {
+        message: updateMessageBatch(selected.message, batchDraft),
+      });
+      if (updated) {
+        setSelected(updated);
+      }
+      await refresh();
+      toast({
+        title: "Batch updated",
+        description: batchDraft.trim()
+          ? `${selected.name} is assigned to ${batchDraft.trim()}.`
+          : `${selected.name} is no longer assigned to a batch.`,
+      });
+    } catch (err) {
+      toast({
+        title: "Unable to update batch",
+        description: err instanceof Error ? err.message : "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSavingBatch(false);
+    }
+  };
+
+  const handleBulkBatchSave = async () => {
+    const selectedEnrolledLeads = leads.filter(
+      (lead) => lead.status === "enrolled" && selectedLeadIds.includes(lead.id),
+    );
+    const batch = bulkBatchDraft.trim();
+
+    if (selectedEnrolledLeads.length === 0) return;
+    if (!batch) {
+      toast({
+        title: "Batch name is required",
+        description: "Enter a batch name before assigning students.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSavingBulkBatch(true);
+    try {
+      await Promise.all(
+        selectedEnrolledLeads.map((lead) =>
+          leadsStore.updateDetails(lead.id, {
+            message: updateMessageBatch(lead.message, batch),
+          }),
+        ),
+      );
+      await refresh();
+      setSelectedLeadIds([]);
+      setBulkBatchDraft("");
+      setIsBulkBatchOpen(false);
+      toast({
+        title: "Batch assigned",
+        description: `${selectedEnrolledLeads.length} ${selectedEnrolledLeads.length === 1 ? "student" : "students"} assigned to ${batch}.`,
+      });
+    } catch (err) {
+      toast({
+        title: "Unable to assign batch",
+        description: err instanceof Error ? err.message : "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSavingBulkBatch(false);
+    }
+  };
+
   const rollDisplayClass = (l: Lead) => {
     if (!l.rollNumber) return null;
     if (l.status === "enrolled") return "font-bold text-[#C9922A]";
@@ -291,7 +430,31 @@ const Leads = () => {
     visibleLeads: Lead[],
     emptyTitle: string,
     emptyDescription: string,
-  ) => (
+  ) => {
+    const visibleEnrolledIds = visibleLeads
+      .filter((lead) => lead.status === "enrolled")
+      .map((lead) => lead.id);
+    const selectedVisibleCount = visibleEnrolledIds.filter((id) => selectedLeadIds.includes(id)).length;
+    const selectedCount = selectedLeadIds.length;
+    const allVisibleEnrolledSelected =
+      visibleEnrolledIds.length > 0 && selectedVisibleCount === visibleEnrolledIds.length;
+
+    const toggleLeadSelection = (lead: Lead, checked: boolean) => {
+      if (lead.status !== "enrolled") return;
+      setSelectedLeadIds((ids) => {
+        if (checked) return ids.includes(lead.id) ? ids : [...ids, lead.id];
+        return ids.filter((id) => id !== lead.id);
+      });
+    };
+
+    const toggleVisibleSelection = (checked: boolean) => {
+      setSelectedLeadIds((ids) => {
+        if (!checked) return ids.filter((id) => !visibleEnrolledIds.includes(id));
+        return Array.from(new Set([...ids, ...visibleEnrolledIds]));
+      });
+    };
+
+    return (
     <Card variant="default" className="p-0 overflow-hidden">
       {isLoading ? (
         <div className="text-center py-16 px-4 text-muted-foreground">
@@ -305,13 +468,36 @@ const Leads = () => {
         </div>
       ) : (
         <div>
+          {selectedCount > 0 && (
+            <div className="flex flex-col gap-3 border-b bg-muted/40 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm font-medium">
+                {selectedCount} enrolled {selectedCount === 1 ? "student" : "students"} selected
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setSelectedLeadIds([])}
+              >
+                Clear selection
+              </Button>
+            </div>
+          )}
           <Table className="table-fixed">
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[30%]">Name</TableHead>
-                <TableHead className="hidden md:table-cell w-[26%]">Email</TableHead>
-                <TableHead className="hidden xl:table-cell w-[14%]">Phone</TableHead>
-                <TableHead className="hidden 2xl:table-cell w-[20%]">Message</TableHead>
+                <TableHead className="w-[48px]">
+                  <Checkbox
+                    checked={allVisibleEnrolledSelected}
+                    disabled={visibleEnrolledIds.length === 0}
+                    onCheckedChange={(checked) => toggleVisibleSelection(checked === true)}
+                    aria-label="Select all enrolled students in this view"
+                  />
+                </TableHead>
+                <TableHead className="w-[25%]">Name</TableHead>
+                <TableHead className="hidden md:table-cell w-[23%]">Email</TableHead>
+                <TableHead className="hidden xl:table-cell w-[13%]">Phone</TableHead>
+                <TableHead className="hidden lg:table-cell w-[14%]">Batch</TableHead>
                 <TableHead className="hidden lg:table-cell w-[12%]">Date</TableHead>
                 <TableHead className="w-[150px]">Status</TableHead>
                 <TableHead className="hidden lg:table-cell w-[110px]">Roll No</TableHead>
@@ -321,9 +507,20 @@ const Leads = () => {
             <TableBody>
               {visibleLeads.map((l) => (
                 <TableRow key={l.id}>
+                  <TableCell>
+                    <Checkbox
+                      checked={selectedLeadIds.includes(l.id)}
+                      disabled={l.status !== "enrolled"}
+                      onCheckedChange={(checked) => toggleLeadSelection(l, checked === true)}
+                      aria-label={`Select ${l.name}`}
+                    />
+                  </TableCell>
                   <TableCell className="min-w-0">
                     <div className="truncate font-medium">{l.name}</div>
                     <div className="truncate text-xs text-muted-foreground md:hidden">{l.email}</div>
+                    <div className="truncate text-xs text-muted-foreground lg:hidden">
+                      Batch: {leadBatch(l.message) || "-"}
+                    </div>
                   </TableCell>
                   <TableCell className="hidden md:table-cell truncate text-muted-foreground">
                     {l.email}
@@ -331,8 +528,8 @@ const Leads = () => {
                   <TableCell className="hidden xl:table-cell truncate text-muted-foreground">
                     {l.phone || "-"}
                   </TableCell>
-                  <TableCell className="hidden 2xl:table-cell truncate text-muted-foreground">
-                    {l.message}
+                  <TableCell className="hidden lg:table-cell truncate text-muted-foreground">
+                    {leadBatch(l.message) || "-"}
                   </TableCell>
                   <TableCell className="hidden lg:table-cell text-muted-foreground whitespace-nowrap">
                     {new Date(l.createdAt).toLocaleDateString()}
@@ -394,7 +591,8 @@ const Leads = () => {
         </div>
       )}
     </Card>
-  );
+    );
+  };
 
   return (
     <div className="space-y-6 max-w-6xl">
@@ -408,6 +606,14 @@ const Leads = () => {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Button
+            type="button"
+            onClick={() => setIsBulkBatchOpen(true)}
+            disabled={selectedLeadIds.length === 0}
+          >
+            <Users className="w-4 h-4" />
+            Assign batch
+          </Button>
           <Button
             type="button"
             variant="outline"
@@ -498,11 +704,11 @@ const Leads = () => {
                   </div>
                 </div>
 
-                {selectedMessage && selectedMessage.details.length > 0 && (
+                {selectedRegistrationDetails.length > 0 && (
                   <div className="rounded-md border bg-background p-3">
                     <p className="text-xs font-medium uppercase text-muted-foreground">Registration Details</p>
                     <dl className="mt-3 grid gap-2">
-                      {selectedMessage.details.map((detail) => (
+                      {selectedRegistrationDetails.map((detail) => (
                         <div key={`${detail.label}-${detail.value}`} className="grid gap-1 sm:grid-cols-[96px_1fr]">
                           <dt className="text-muted-foreground">{detail.label}</dt>
                           <dd className="font-medium">{detail.value}</dd>
@@ -511,6 +717,27 @@ const Leads = () => {
                     </dl>
                   </div>
                 )}
+
+                {selected.status === "enrolled" ? (
+                  <div className="rounded-md border bg-background p-3">
+                    <p className="text-xs font-medium uppercase text-muted-foreground">Batch</p>
+                    <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+                      <Input
+                        value={batchDraft}
+                        onChange={(event) => setBatchDraft(event.target.value)}
+                        placeholder="Saturday 5 PM"
+                      />
+                      <Button
+                        type="button"
+                        onClick={handleSaveBatch}
+                        disabled={isSavingBatch}
+                        className="sm:w-24"
+                      >
+                        {isSavingBatch ? "Saving..." : "Save"}
+                      </Button>
+                    </div>
+                  </div>
+                ) : null}
 
                 <div className="rounded-md border bg-muted/50 p-3">
                   <p className="text-xs font-medium uppercase text-muted-foreground">Notes</p>
@@ -521,6 +748,50 @@ const Leads = () => {
               </div>
             </>
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={isBulkBatchOpen}
+        onOpenChange={(open) => {
+          setIsBulkBatchOpen(open);
+          if (!open) setBulkBatchDraft("");
+        }}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Assign batch</DialogTitle>
+            <DialogDescription>
+              {selectedLeadIds.length} enrolled {selectedLeadIds.length === 1 ? "student" : "students"} selected.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <p className="mb-1 text-sm font-medium">Batch name</p>
+              <Input
+                value={bulkBatchDraft}
+                onChange={(event) => setBulkBatchDraft(event.target.value)}
+                placeholder="Saturday 5 PM"
+                autoFocus
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsBulkBatchOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                onClick={() => void handleBulkBatchSave()}
+                disabled={isSavingBulkBatch || selectedLeadIds.length === 0}
+              >
+                {isSavingBulkBatch ? "Saving..." : "Save"}
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
 

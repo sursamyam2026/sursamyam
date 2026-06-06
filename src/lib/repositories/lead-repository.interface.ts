@@ -11,6 +11,7 @@ export interface LeadRepository {
     id: string,
     status: LeadStatus,
   ): Promise<{ lead?: Lead; assignedRollNumber?: string }>;
+  updateDetails(id: string, input: Partial<Pick<Lead, "name" | "phone" | "message">>): Promise<Lead | undefined>;
   remove(id: string): Promise<void>;
   findByEmail(email: string): Promise<Lead | null>;
   subscribe(cb: () => void): () => void;
