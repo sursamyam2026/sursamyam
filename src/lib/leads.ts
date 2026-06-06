@@ -268,6 +268,10 @@ const supabaseLeadStore: LeadRepository = {
     let rollNumber = current.rollNumber;
     let enrolledAt = current.enrolledAt;
 
+    if (status === "discontinued" && current.status !== "enrolled" && current.status !== "discontinued") {
+      throw new Error("Only enrolled students can be marked as discontinued.");
+    }
+
     if (status === "enrolled") {
       if (!rollNumber) {
         rollNumber = await nextRollNumber(leads);
@@ -368,6 +372,10 @@ const localLeadStore: LeadRepository = {
     let assignedRollNumber: string | undefined;
     let rollNumber = current.rollNumber;
     let enrolledAt = current.enrolledAt;
+
+    if (status === "discontinued" && current.status !== "enrolled" && current.status !== "discontinued") {
+      throw new Error("Only enrolled students can be marked as discontinued.");
+    }
 
     if (status === "enrolled") {
       if (!rollNumber) {

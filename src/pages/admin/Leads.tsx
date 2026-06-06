@@ -9,6 +9,16 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -25,7 +35,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Download, Eye, Inbox, Upload } from "lucide-react";
+import { Download, Eye, Inbox, Trash2, Upload } from "lucide-react";
 import { useLeads } from "@/hooks/use-leads";
 import { leadsStore, type Lead, type LeadStatus } from "@/lib/leads";
 import { parseLeadImportFile } from "@/lib/lead-import";
@@ -59,6 +69,11 @@ const statusLabels = STATUSES.reduce(
   {} as Record<LeadStatus, string>,
 );
 
+function canSelectStatus(lead: Lead, status: LeadStatus) {
+  if (status !== "discontinued") return true;
+  return lead.status === "enrolled" || lead.status === "discontinued";
+}
+
 const emptyDescriptionForStatus: Record<LeadStatus, string> = {
   new: "New submissions from the contact form will appear here.",
   contacted: "Leads marked as contacted will appear here.",
@@ -70,11 +85,9 @@ const emptyDescriptionForStatus: Record<LeadStatus, string> = {
 };
 
 const sampleLeadRows = [
-  ["name", "email", "phone", "message", "status"],
-  ["Aarav Sharma", "aarav@example.com", "+91 9876543210", "Interested in beginner vocal classes", "new"],
-  ["Meera Iyer", "meera@example.com", "+91 9876543211", "Registered through phone inquiry", "registered"],
-  ["Kabir Rao", "kabir@example.com", "+91 9876543212", "Continuing student", "enrolled"],
-  ["Ananya Sen", "ananya@example.com", "+91 9876543213", "Stopped lessons", "discontinued"],
+  ["name", "email", "phone", "age", "city", "country", "program", "course", "format", "status", "message"],
+  ["Meera Iyer", "meera@example.com", "+91 9876543211", "26", "Mumbai", "India", "Adults", "One-on-One", "Online", "registered", "Registered through phone inquiry"],
+  ["Kabir Rao", "kabir@example.com", "+91 9876543212", "10", "Delhi", "India", "Kids", "Group", "Offline", "enrolled", "Continuing student"],
 ];
 
 function csvEscape(value: string): string {
@@ -92,9 +105,51 @@ function downloadSampleLeadFile() {
   URL.revokeObjectURL(url);
 }
 
+function buildImportedLeadMessage(input: Awaited<ReturnType<typeof parseLeadImportFile>>["leads"][number]) {
+  const details = [
+    input.courseName
+      ? `Course: ${input.courseName}${input.track ? ` (${input.track === "adults" ? "Adults" : "Kids"}${input.format ? ` · ${input.format === "online" ? "Online" : "Offline"}` : ""})` : ""}`
+      : "",
+    input.age ? `Age: ${input.age}` : "",
+    [input.city, input.country].filter(Boolean).join(", "),
+  ].filter(Boolean);
+
+  return [...details, input.message].filter(Boolean).join("\n");
+}
+
+function parseLeadMessage(message: string) {
+  const details: { label: string; value: string }[] = [];
+  const notes: string[] = [];
+
+  message
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .forEach((line) => {
+      const [rawLabel, ...rest] = line.split(":");
+      const label = rawLabel.trim();
+      const value = rest.join(":").trim();
+
+      if (value && ["Course", "Age"].includes(label)) {
+        details.push({ label, value });
+        return;
+      }
+
+      if (details.some((detail) => detail.label === "Age") && line.includes(",")) {
+        details.push({ label: "Location", value: line });
+        return;
+      }
+
+      notes.push(line);
+    });
+
+  return { details, notes: notes.join("\n") };
+}
+
 const Leads = () => {
   const { leads, isLoading, error, refresh } = useLeads();
   const [selected, setSelected] = useState<Lead | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<Lead | null>(null);
   const [isImporting, setIsImporting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const { toast } = useToast();
@@ -102,6 +157,7 @@ const Leads = () => {
     ...status,
     leads: leads.filter((lead) => lead.status === status.value),
   }));
+  const selectedMessage = selected ? parseLeadMessage(selected.message) : null;
 
   const handleStatusChange = async (leadId: string, status: LeadStatus) => {
     try {
@@ -137,11 +193,20 @@ const Leads = () => {
         return;
       }
 
+      if (parsed.errors.length > 0) {
+        toast({
+          title: "Fix the sheet before importing",
+          description: `${parsed.errors[0]}${parsed.errors.length > 1 ? ` ${parsed.errors.length - 1} more rows need attention.` : ""}`,
+          variant: "destructive",
+        });
+        return;
+      }
+
       const existingEmails = new Set(
         (await leadsStore.list()).map((lead) => lead.email.trim().toLowerCase()),
       );
       let imported = 0;
-      let skipped = parsed.errors.length;
+      let skipped = 0;
 
       for (const input of parsed.leads) {
         if (existingEmails.has(input.email)) {
@@ -153,7 +218,7 @@ const Leads = () => {
           name: input.name,
           email: input.email,
           phone: input.phone,
-          message: input.message,
+          message: buildImportedLeadMessage(input),
         });
 
         if (input.status !== "new") {
@@ -183,6 +248,29 @@ const Leads = () => {
     }
   };
 
+  const handleDeleteLead = async () => {
+    if (!pendingDelete) return;
+
+    try {
+      await leadsStore.remove(pendingDelete.id);
+      if (selected?.id === pendingDelete.id) {
+        setSelected(null);
+      }
+      setPendingDelete(null);
+      await refresh();
+      toast({
+        title: "Lead deleted",
+        description: `${pendingDelete.name} has been removed.`,
+      });
+    } catch (err) {
+      toast({
+        title: "Unable to delete lead",
+        description: err instanceof Error ? err.message : "Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const rollDisplayClass = (l: Lead) => {
     if (!l.rollNumber) return null;
     if (l.status === "enrolled") return "font-bold text-[#C9922A]";
@@ -206,30 +294,37 @@ const Leads = () => {
           <p className="text-sm mt-1">{emptyDescription}</p>
         </div>
       ) : (
-        <div className="overflow-x-auto">
-          <Table>
+        <div>
+          <Table className="table-fixed">
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Phone</TableHead>
-                <TableHead className="hidden md:table-cell">Message</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Roll No</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead className="w-[30%]">Name</TableHead>
+                <TableHead className="hidden md:table-cell w-[26%]">Email</TableHead>
+                <TableHead className="hidden xl:table-cell w-[14%]">Phone</TableHead>
+                <TableHead className="hidden 2xl:table-cell w-[20%]">Message</TableHead>
+                <TableHead className="hidden lg:table-cell w-[12%]">Date</TableHead>
+                <TableHead className="w-[150px]">Status</TableHead>
+                <TableHead className="hidden lg:table-cell w-[110px]">Roll No</TableHead>
+                <TableHead className="w-[92px] text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {visibleLeads.map((l) => (
                 <TableRow key={l.id}>
-                  <TableCell className="font-medium">{l.name}</TableCell>
-                  <TableCell className="text-muted-foreground">{l.email}</TableCell>
-                  <TableCell className="text-muted-foreground">{l.phone || "-"}</TableCell>
-                  <TableCell className="hidden md:table-cell max-w-xs truncate text-muted-foreground">
+                  <TableCell className="min-w-0">
+                    <div className="truncate font-medium">{l.name}</div>
+                    <div className="truncate text-xs text-muted-foreground md:hidden">{l.email}</div>
+                  </TableCell>
+                  <TableCell className="hidden md:table-cell truncate text-muted-foreground">
+                    {l.email}
+                  </TableCell>
+                  <TableCell className="hidden xl:table-cell truncate text-muted-foreground">
+                    {l.phone || "-"}
+                  </TableCell>
+                  <TableCell className="hidden 2xl:table-cell truncate text-muted-foreground">
                     {l.message}
                   </TableCell>
-                  <TableCell className="text-muted-foreground whitespace-nowrap">
+                  <TableCell className="hidden lg:table-cell text-muted-foreground whitespace-nowrap">
                     {new Date(l.createdAt).toLocaleDateString()}
                   </TableCell>
                   <TableCell>
@@ -237,19 +332,24 @@ const Leads = () => {
                       value={l.status}
                       onValueChange={(v) => handleStatusChange(l.id, v as LeadStatus)}
                     >
-                      <SelectTrigger className="h-8 min-w-[140px] w-[140px] sm:w-auto">
+                      <SelectTrigger className="h-8 w-[132px]">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent className="bg-white text-[#1B4D3E]">
                         {STATUSES.map((s) => (
-                          <SelectItem key={s.value} value={s.value} className={itemClass}>
+                          <SelectItem
+                            key={s.value}
+                            value={s.value}
+                            className={itemClass}
+                            disabled={!canSelectStatus(l, s.value)}
+                          >
                             {s.label}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="hidden lg:table-cell">
                     {l.rollNumber ? (
                       <span className={rollDisplayClass(l) ?? ""}>{l.rollNumber}</span>
                     ) : (
@@ -257,14 +357,25 @@ const Leads = () => {
                     )}
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setSelected(l)}
-                      aria-label={`View ${l.name}`}
-                    >
-                      <Eye className="w-4 h-4" />
-                    </Button>
+                    <div className="flex items-center justify-end gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setSelected(l)}
+                        aria-label={`View ${l.name}`}
+                      >
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setPendingDelete(l)}
+                        aria-label={`Delete ${l.name}`}
+                        className="text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -353,25 +464,48 @@ const Leads = () => {
                   Submitted {new Date(selected.createdAt).toLocaleString()}
                 </DialogDescription>
               </DialogHeader>
-              <div className="space-y-3 text-sm">
-                <div>
-                  <p className="text-muted-foreground">Email</p>
-                  <p className="font-medium">{selected.email}</p>
+              <div className="space-y-4 text-sm">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-md border bg-background p-3">
+                    <p className="text-xs font-medium uppercase text-muted-foreground">Email</p>
+                    <p className="mt-1 break-all font-medium">{selected.email}</p>
+                  </div>
+                  <div className="rounded-md border bg-background p-3">
+                    <p className="text-xs font-medium uppercase text-muted-foreground">Phone</p>
+                    <p className="mt-1 font-medium">{selected.phone || "—"}</p>
+                  </div>
+                  <div className="rounded-md border bg-background p-3">
+                    <p className="text-xs font-medium uppercase text-muted-foreground">Status</p>
+                    <Badge className={`mt-1 ${statusColors[selected.status]}`}>
+                      {statusLabels[selected.status]}
+                    </Badge>
+                  </div>
+                  <div className="rounded-md border bg-background p-3">
+                    <p className="text-xs font-medium uppercase text-muted-foreground">Roll No</p>
+                    <p className={rollDisplayClass(selected) ?? "mt-1 font-medium text-muted-foreground"}>
+                      {selected.rollNumber || "—"}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-muted-foreground">Phone</p>
-                  <p className="font-medium">{selected.phone || "—"}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Status</p>
-                  <Badge className={statusColors[selected.status]}>
-                    {statusLabels[selected.status]}
-                  </Badge>
-                </div>
-                <div>
-                  <p className="text-muted-foreground mb-1">Message</p>
-                  <p className="whitespace-pre-wrap rounded-md bg-muted p-3">
-                    {selected.message}
+
+                {selectedMessage && selectedMessage.details.length > 0 && (
+                  <div className="rounded-md border bg-background p-3">
+                    <p className="text-xs font-medium uppercase text-muted-foreground">Registration Details</p>
+                    <dl className="mt-3 grid gap-2">
+                      {selectedMessage.details.map((detail) => (
+                        <div key={`${detail.label}-${detail.value}`} className="grid gap-1 sm:grid-cols-[96px_1fr]">
+                          <dt className="text-muted-foreground">{detail.label}</dt>
+                          <dd className="font-medium">{detail.value}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                  </div>
+                )}
+
+                <div className="rounded-md border bg-muted/50 p-3">
+                  <p className="text-xs font-medium uppercase text-muted-foreground">Notes</p>
+                  <p className="mt-2 whitespace-pre-wrap">
+                    {selectedMessage?.notes || "—"}
                   </p>
                 </div>
               </div>
@@ -379,6 +513,33 @@ const Leads = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      <AlertDialog
+        open={!!pendingDelete}
+        onOpenChange={(open) => {
+          if (!open) setPendingDelete(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete lead?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingDelete
+                ? `This will permanently delete ${pendingDelete.name} from leads.`
+                : "This lead will be permanently deleted."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => void handleDeleteLead()}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
