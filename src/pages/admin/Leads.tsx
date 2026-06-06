@@ -70,6 +70,12 @@ const statusLabels = STATUSES.reduce(
 );
 
 function canSelectStatus(lead: Lead, status: LeadStatus) {
+  if (status === "registered") {
+    return lead.status === "registered";
+  }
+  if (status === "enrolled") {
+    return lead.status === "registered" || lead.status === "enrolled";
+  }
   if (status !== "discontinued") return true;
   return lead.status === "enrolled" || lead.status === "discontinued";
 }
@@ -214,15 +220,19 @@ const Leads = () => {
           continue;
         }
 
-        const lead = await leadsStore.add({
+        const { assignedRollNumber } = await leadsStore.importWithStatus({
           name: input.name,
           email: input.email,
           phone: input.phone,
           message: buildImportedLeadMessage(input),
+          status: input.status,
         });
 
-        if (input.status !== "new") {
-          await leadsStore.updateStatus(lead.id, input.status);
+        if (assignedRollNumber) {
+          toast({
+            title: `Roll number ${assignedRollNumber} assigned successfully`,
+            className: "border-[#C9922A] bg-[#1B4D3E] text-[#FDF6EC]",
+          });
         }
 
         existingEmails.add(input.email);

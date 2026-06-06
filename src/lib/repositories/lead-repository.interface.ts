@@ -4,6 +4,9 @@ import type { Lead, LeadStatus } from "@/lib/leads.types";
 export interface LeadRepository {
   list(): Promise<Lead[]>;
   add(input: Omit<Lead, "id" | "status" | "createdAt">): Promise<Lead>;
+  importWithStatus(
+    input: Omit<Lead, "id" | "createdAt">,
+  ): Promise<{ lead: Lead; assignedRollNumber?: string }>;
   updateStatus(
     id: string,
     status: LeadStatus,

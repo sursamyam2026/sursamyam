@@ -21,6 +21,7 @@ export interface AttendanceInput {
 export interface ClassSession {
   id: string;
   classDate: string;
+  classDay: string;
   classTime: string;
   courseType: string;
   createdAt: string;
@@ -29,6 +30,14 @@ export interface ClassSession {
 
 export interface ClassSessionInput {
   classDate: string;
+  classDay: string;
   classTime: string;
   courseType: string;
+}
+
+export interface ClassRosterMember {
+  id: string;
+  sessionId: string;
+  leadId: string;
+  createdAt: string;
 }

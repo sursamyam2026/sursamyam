@@ -96,6 +96,12 @@ function toInsert(input: Omit<Lead, "id" | "status" | "createdAt">) {
   };
 }
 
+function assertImportStatus(status: LeadStatus) {
+  if (status !== "registered" && status !== "enrolled") {
+    throw new Error("Bulk upload can only import registered or enrolled students.");
+  }
+}
+
 function readLocal(): Lead[] {
   try {
     const raw = localStorage.getItem(KEY);
@@ -258,6 +264,44 @@ const supabaseLeadStore: LeadRepository = {
     return fromRow(data as LeadRow);
   },
 
+  async importWithStatus(input) {
+    if (!supabase) throw new Error("Supabase is not configured.");
+    assertImportStatus(input.status);
+
+    const leads = await this.list();
+    let assignedRollNumber: string | undefined;
+    let rollNumber = input.rollNumber;
+    let enrolledAt = input.enrolledAt;
+
+    if (input.status === "enrolled") {
+      if (!rollNumber) {
+        rollNumber = await nextRollNumber(leads);
+        assignedRollNumber = rollNumber;
+      }
+      if (!enrolledAt) {
+        enrolledAt = new Date().toISOString();
+      }
+    }
+
+    const { data, error } = await supabase
+      .from("leads")
+      .insert({
+        name: input.name,
+        email: input.email,
+        phone: input.phone ?? null,
+        message: input.message,
+        status: input.status,
+        roll_number: rollNumber ?? null,
+        enrolled_at: enrolledAt ?? null,
+      })
+      .select("id,name,email,phone,message,status,created_at,roll_number,enrolled_at")
+      .single();
+
+    if (error) throw error;
+    window.dispatchEvent(new Event(EVENT));
+    return { lead: fromRow(data as LeadRow), assignedRollNumber };
+  },
+
   async updateStatus(id, status) {
     if (!supabase) return {};
     const leads = await this.list();
@@ -267,6 +311,14 @@ const supabaseLeadStore: LeadRepository = {
     let assignedRollNumber: string | undefined;
     let rollNumber = current.rollNumber;
     let enrolledAt = current.enrolledAt;
+
+    if (status === "registered" && current.status !== "registered") {
+      throw new Error("Registered status can only come from registration flow or bulk upload.");
+    }
+
+    if (status === "enrolled" && current.status !== "registered" && current.status !== "enrolled") {
+      throw new Error("Only registered students can be marked as enrolled.");
+    }
 
     if (status === "discontinued" && current.status !== "enrolled" && current.status !== "discontinued") {
       throw new Error("Only enrolled students can be marked as discontinued.");
@@ -363,6 +415,34 @@ const localLeadStore: LeadRepository = {
     return lead;
   },
 
+  async importWithStatus(input) {
+    assertImportStatus(input.status);
+    const leads = readLocal();
+    let assignedRollNumber: string | undefined;
+    let rollNumber = input.rollNumber;
+    let enrolledAt = input.enrolledAt;
+
+    if (input.status === "enrolled") {
+      if (!rollNumber) {
+        rollNumber = await nextRollNumber(leads);
+        assignedRollNumber = rollNumber;
+      }
+      if (!enrolledAt) {
+        enrolledAt = new Date().toISOString();
+      }
+    }
+
+    const lead: Lead = {
+      ...input,
+      id: crypto.randomUUID(),
+      createdAt: new Date().toISOString(),
+      rollNumber,
+      enrolledAt,
+    };
+    writeLocal([lead, ...leads]);
+    return { lead, assignedRollNumber };
+  },
+
   async updateStatus(id, status) {
     const leads = readLocal();
     const index = leads.findIndex((l) => l.id === id);
@@ -372,6 +452,14 @@ const localLeadStore: LeadRepository = {
     let assignedRollNumber: string | undefined;
     let rollNumber = current.rollNumber;
     let enrolledAt = current.enrolledAt;
+
+    if (status === "registered" && current.status !== "registered") {
+      throw new Error("Registered status can only come from registration flow or bulk upload.");
+    }
+
+    if (status === "enrolled" && current.status !== "registered" && current.status !== "enrolled") {
+      throw new Error("Only registered students can be marked as enrolled.");
+    }
 
     if (status === "discontinued" && current.status !== "enrolled" && current.status !== "discontinued") {
       throw new Error("Only enrolled students can be marked as discontinued.");
