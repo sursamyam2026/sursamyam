@@ -6,6 +6,7 @@ export type LeadStatus =
   | "converted"
   | "registered"
   | "enrolled"
+  | "discontinued"
   | "declined";
 
 export interface Lead {

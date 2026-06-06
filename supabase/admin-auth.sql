@@ -6,6 +6,11 @@ create table if not exists public.admin_users (
   constraint admin_users_role_check check (role in ('admin'))
 );
 
+alter table public.leads drop constraint if exists leads_status_check;
+alter table public.leads add constraint leads_status_check check (
+  status in ('new', 'contacted', 'converted', 'registered', 'enrolled', 'discontinued', 'declined')
+);
+
 alter table public.leads enable row level security;
 alter table public.roll_meta enable row level security;
 alter table public.admin_users enable row level security;
