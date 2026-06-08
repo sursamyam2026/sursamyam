@@ -72,6 +72,15 @@ const statusLabels = STATUSES.reduce(
 );
 
 function canSelectStatus(lead: Lead, status: LeadStatus) {
+  if (lead.status === "registered") {
+    return status === "enrolled" || status === "declined";
+  }
+  if (lead.status === "enrolled") {
+    return status === "registered" || status === "discontinued";
+  }
+  if (lead.status === "discontinued") {
+    return status === "enrolled";
+  }
   if (status === "registered") {
     return lead.status === "registered";
   }

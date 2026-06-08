@@ -102,6 +102,32 @@ function assertImportStatus(status: LeadStatus) {
   }
 }
 
+function assertStatusTransition(currentStatus: LeadStatus, nextStatus: LeadStatus) {
+  if (currentStatus === "registered" && nextStatus !== "registered" && nextStatus !== "enrolled" && nextStatus !== "declined") {
+    throw new Error("Registered students can only be enrolled or declined.");
+  }
+
+  if (currentStatus === "enrolled" && nextStatus !== "enrolled" && nextStatus !== "registered" && nextStatus !== "discontinued") {
+    throw new Error("Enrolled students can only be registered or discontinued.");
+  }
+
+  if (currentStatus === "discontinued" && nextStatus !== "discontinued" && nextStatus !== "enrolled") {
+    throw new Error("Discontinued students can only be re-enrolled.");
+  }
+
+  if (nextStatus === "registered" && currentStatus !== "registered" && currentStatus !== "enrolled") {
+    throw new Error("Registered status can only come from registration flow or bulk upload.");
+  }
+
+  if (nextStatus === "enrolled" && currentStatus !== "registered" && currentStatus !== "enrolled" && currentStatus !== "discontinued") {
+    throw new Error("Only registered or discontinued students can be marked as enrolled.");
+  }
+
+  if (nextStatus === "discontinued" && currentStatus !== "enrolled" && currentStatus !== "discontinued") {
+    throw new Error("Only enrolled students can be marked as discontinued.");
+  }
+}
+
 function readLocal(): Lead[] {
   try {
     const raw = localStorage.getItem(KEY);
@@ -312,16 +338,11 @@ const supabaseLeadStore: LeadRepository = {
     let rollNumber = current.rollNumber;
     let enrolledAt = current.enrolledAt;
 
-    if (status === "registered" && current.status !== "registered") {
-      throw new Error("Registered status can only come from registration flow or bulk upload.");
-    }
+    assertStatusTransition(current.status, status);
 
-    if (status === "enrolled" && current.status !== "registered" && current.status !== "enrolled") {
-      throw new Error("Only registered students can be marked as enrolled.");
-    }
-
-    if (status === "discontinued" && current.status !== "enrolled" && current.status !== "discontinued") {
-      throw new Error("Only enrolled students can be marked as discontinued.");
+    if (status === "registered") {
+      rollNumber = undefined;
+      enrolledAt = undefined;
     }
 
     if (status === "enrolled") {
@@ -472,16 +493,11 @@ const localLeadStore: LeadRepository = {
     let rollNumber = current.rollNumber;
     let enrolledAt = current.enrolledAt;
 
-    if (status === "registered" && current.status !== "registered") {
-      throw new Error("Registered status can only come from registration flow or bulk upload.");
-    }
+    assertStatusTransition(current.status, status);
 
-    if (status === "enrolled" && current.status !== "registered" && current.status !== "enrolled") {
-      throw new Error("Only registered students can be marked as enrolled.");
-    }
-
-    if (status === "discontinued" && current.status !== "enrolled" && current.status !== "discontinued") {
-      throw new Error("Only enrolled students can be marked as discontinued.");
+    if (status === "registered") {
+      rollNumber = undefined;
+      enrolledAt = undefined;
     }
 
     if (status === "enrolled") {
