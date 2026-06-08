@@ -92,9 +92,10 @@ const SyllabusSection = () => {
               <p>
                 At Sur Samyam, our curriculum is rooted in the most respected and time-honoured traditions of
                 Hindustani classical music. We follow the syllabi of{" "}
-                <span className="font-semibold text-[#1B4D3E]">Gandharva Mahavidyalaya</span>,{" "}
-                <span className="font-semibold text-[#C9922A]">Pandit Krishnarao Shankar Pandit (PKK)</span>, and
-                the <span className="font-semibold text-[#1B4D3E]">Gangubai Hangal tradition</span> - each
+                <span className="font-semibold text-[#1B4D3E]">
+                  ABGMVM (Akhil Bharatiya Gandharva Mahavidyalaya Mandal)
+                </span>{" "}
+                and the <span className="font-semibold text-[#1B4D3E]">Gangubai Hangal tradition</span> - each
                 representing a distinct and celebrated lineage within Hindustani vocal music.
               </p>
               <p>

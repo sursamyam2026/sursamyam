@@ -10,7 +10,7 @@ const teachers = [
     bio: "An MBA by education and a musician by passion, she founded Sur Samyam with a clear vision to build a new age system for an age old craft. With over a decade of dedicated practice in Hindustani classical vocal music, she leads every class as both a teacher and a forever student, knowing that the deeper you go into this art, the more it has to offer.",
     image: sonalinImage,
     imageAlt: "Sonalin Subhadarshini portrait",
-    imagePosition: "50% 35%",
+    imagePosition: "50% 12%",
     overlayBadges: [
       { label: "Passionate", icon: Heart, className: "border border-[#C9922A] bg-[#FDF6EC] text-[#C9922A]" },
       { label: "Ever-Learning", icon: GraduationCap, className: "border border-[#C9922A] bg-[#FDF6EC] text-[#C9922A]" },
@@ -87,7 +87,7 @@ function TeacherCard({
 }) {
   return (
     <div className="box-border flex h-auto min-w-0 w-full max-w-[420px] flex-1 flex-col rounded-[12px] border-[1.5px] border-[#C9922A] bg-white p-5 md:basis-0">
-      <div className="relative mb-3 h-[300px] w-full overflow-hidden rounded-[10px] border-2 border-[#C9922A]">
+      <div className="relative mb-3 h-[360px] w-full overflow-hidden rounded-[10px] border-2 border-[#C9922A]">
         <img
           src={teacher.image}
           alt={teacher.imageAlt}
