@@ -8,6 +8,10 @@ import {
   Plus,
   Save,
   Users,
+  Download,
+  RotateCcw,
+  CheckSquare,
+  SquareMinus,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -44,6 +48,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useAttendance } from "@/hooks/use-attendance";
 import { useLeads } from "@/hooks/use-leads";
 import { attendanceStore, type ClassSession } from "@/lib/attendance";
@@ -63,6 +73,7 @@ const COURSE_OPTIONS = [
 const COURSE_TYPES = COURSE_OPTIONS.map((option) => option.value);
 const ALL_BATCHES_VALUE = "__all_batches__";
 const ALL_CLASS_TYPES_VALUE = "all";
+const SELECT_CLASS_TYPE_VALUE = "__select_class_type__";
 
 const WEEKDAYS = [
   "Sunday",
@@ -80,6 +91,11 @@ const MONTH_OPTIONS = Array.from({ length: 12 }, (_, index) => {
 });
 
 const CLASS_STATUS_GROUPS = [
+  {
+    value: "all",
+    label: "All",
+    description: "All classes matching the current filters.",
+  },
   {
     value: "not_marked",
     label: "Not Marked",
@@ -181,6 +197,9 @@ function isSameMonth(date: string, anchorDate: string) {
 }
 
 function toTimeParts(value: string) {
+  if (!value) {
+    return { hour: "", minute: "", period: "" };
+  }
   const [hourText = "17", minuteText = "00"] = value.split(":");
   const hour24 = Number.parseInt(hourText, 10);
   const safeHour = Number.isNaN(hour24) ? 17 : hour24;
@@ -195,7 +214,7 @@ function toTimeParts(value: string) {
 
 function timeFromParts(hour: string, minute: string, period: string) {
   let hour24 = Number.parseInt(hour, 10);
-  if (Number.isNaN(hour24)) hour24 = 5;
+  if (Number.isNaN(hour24)) hour24 = 0;
   if (period === "PM" && hour24 !== 12) hour24 += 12;
   if (period === "AM" && hour24 === 12) hour24 = 0;
   return `${String(hour24).padStart(2, "0")}:${minute}`;
@@ -203,6 +222,9 @@ function timeFromParts(hour: string, minute: string, period: string) {
 
 const TIME_HOURS = Array.from({ length: 12 }, (_, index) => String(index + 1));
 const TIME_MINUTES = Array.from({ length: 12 }, (_, index) => String(index * 5).padStart(2, "0"));
+const SELECT_HOUR_VALUE = "__select_hour__";
+const SELECT_MINUTE_VALUE = "__select_minute__";
+const SELECT_PERIOD_VALUE = "__select_period__";
 
 function DatePicker({
   value,
@@ -242,20 +264,30 @@ function TimePicker({
   value: string;
   onChange: (value: string) => void;
 }) {
-  const parts = toTimeParts(value);
+  const [parts, setParts] = useState(() => toTimeParts(value));
+
+  useEffect(() => {
+    setParts(toTimeParts(value));
+  }, [value]);
+
   const update = (patch: Partial<typeof parts>) => {
     const next = { ...parts, ...patch };
-    onChange(timeFromParts(next.hour, next.minute, next.period));
+    setParts(next);
+    onChange(next.hour && next.minute && next.period ? timeFromParts(next.hour, next.minute, next.period) : "");
   };
 
   return (
     <div className="grid grid-cols-[1fr_1fr_1fr] gap-2">
-      <Select value={parts.hour} onValueChange={(hour) => update({ hour })}>
+      <Select
+        value={parts.hour || SELECT_HOUR_VALUE}
+        onValueChange={(hour) => update({ hour: hour === SELECT_HOUR_VALUE ? "" : hour })}
+      >
         <SelectTrigger aria-label="Hour">
           <Clock className="mr-2 h-4 w-4" />
           <SelectValue />
         </SelectTrigger>
         <SelectContent className="bg-white text-[#1B4D3E]">
+          <SelectItem value={SELECT_HOUR_VALUE} disabled>00</SelectItem>
           {TIME_HOURS.map((hour) => (
             <SelectItem key={hour} value={hour}>
               {hour}
@@ -263,11 +295,15 @@ function TimePicker({
           ))}
         </SelectContent>
       </Select>
-      <Select value={parts.minute} onValueChange={(minute) => update({ minute })}>
+      <Select
+        value={parts.minute || SELECT_MINUTE_VALUE}
+        onValueChange={(minute) => update({ minute: minute === SELECT_MINUTE_VALUE ? "" : minute })}
+      >
         <SelectTrigger aria-label="Minute">
           <SelectValue />
         </SelectTrigger>
         <SelectContent className="bg-white text-[#1B4D3E]">
+          <SelectItem value={SELECT_MINUTE_VALUE} disabled>00</SelectItem>
           {TIME_MINUTES.map((minute) => (
             <SelectItem key={minute} value={minute}>
               {minute}
@@ -275,11 +311,15 @@ function TimePicker({
           ))}
         </SelectContent>
       </Select>
-      <Select value={parts.period} onValueChange={(period) => update({ period })}>
+      <Select
+        value={parts.period || SELECT_PERIOD_VALUE}
+        onValueChange={(period) => update({ period: period === SELECT_PERIOD_VALUE ? "" : period })}
+      >
         <SelectTrigger aria-label="Period">
           <SelectValue />
         </SelectTrigger>
         <SelectContent className="bg-white text-[#1B4D3E]">
+          <SelectItem value={SELECT_PERIOD_VALUE} disabled>AM/PM</SelectItem>
           <SelectItem value="AM">AM</SelectItem>
           <SelectItem value="PM">PM</SelectItem>
         </SelectContent>
@@ -354,7 +394,7 @@ function parseStudentBatchName(message: string) {
 function matchesClassAssignment(message: string, classType: string, batch: string) {
   if (!matchesClassType(message, classType)) return false;
   const normalizedBatch = batch.trim().toLowerCase();
-  if (!normalizedBatch) return true;
+  if (!normalizedBatch) return false;
   return parseStudentBatch(message) === normalizedBatch;
 }
 
@@ -371,23 +411,25 @@ const Attendance = () => {
   const [classDialogOpen, setClassDialogOpen] = useState(false);
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
   const [classDate, setClassDate] = useState(todayString());
-  const [classTime, setClassTime] = useState("17:00");
-  const [courseType, setCourseType] = useState(COURSE_TYPES[0]);
+  const [classTime, setClassTime] = useState("");
+  const [courseType, setCourseType] = useState("");
   const [classBatch, setClassBatch] = useState("");
   const [pendingDeleteSession, setPendingDeleteSession] = useState<ClassSession | null>(null);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
-  const [repeatStartDate, setRepeatStartDate] = useState(todayString());
-  const [repeatWeekday, setRepeatWeekday] = useState(dayLabel(todayString()));
-  const [repeatMonths, setRepeatMonths] = useState("3");
+  const [repeatStartDate, setRepeatStartDate] = useState("");
+  const [repeatMonths, setRepeatMonths] = useState("");
   const [reportMonth, setReportMonth] = useState(monthKey(todayString()));
   const [reportCourseType, setReportCourseType] = useState(ALL_CLASS_TYPES_VALUE);
-  const [classFilterDate, setClassFilterDate] = useState(todayString());
+  const [reportBatch, setReportBatch] = useState("");
+  const [reportSearch, setReportSearch] = useState("");
+  const [attendanceTab, setAttendanceTab] = useState("classes");
+  const [classFilterDate, setClassFilterDate] = useState("");
   const [classFilterCourseType, setClassFilterCourseType] = useState(ALL_CLASS_TYPES_VALUE);
   const [classFilterBatch, setClassFilterBatch] = useState("");
   const [scheduleDate, setScheduleDate] = useState(todayString());
   const [scheduleMonth, setScheduleMonth] = useState(monthKey(todayString()));
   const [classView, setClassView] = useState<"list" | "weekly" | "monthly">("list");
-  const [classStatusTab, setClassStatusTab] = useState<(typeof CLASS_STATUS_GROUPS)[number]["value"]>("not_marked");
+  const [classStatusTab, setClassStatusTab] = useState<(typeof CLASS_STATUS_GROUPS)[number]["value"]>("all");
   const [isSaving, setIsSaving] = useState(false);
   const { leads, isLoading: isLoadingLeads, error: leadsError } = useLeads();
   const {
@@ -453,6 +495,33 @@ const Attendance = () => {
     return Array.from(batches.values()).sort((a, b) => a.localeCompare(b));
   }, [classFilterBatch, classFilterCourseType, enrolledStudents, sessions]);
 
+  const reportBatchOptions = useMemo(() => {
+    const batches = new Map<string, string>();
+    sessions
+      .filter((session) => reportCourseType === ALL_CLASS_TYPES_VALUE || session.courseType === reportCourseType)
+      .forEach((session) => {
+        const batch = session.batch?.trim();
+        if (batch) batches.set(batch.toLowerCase(), batch);
+      });
+
+    enrolledStudents
+      .filter(
+        (student) =>
+          reportCourseType === ALL_CLASS_TYPES_VALUE ||
+          matchesClassType(student.message, reportCourseType),
+      )
+      .forEach((student) => {
+        const batch = parseStudentBatchName(student.message);
+        if (batch) batches.set(batch.toLowerCase(), batch);
+      });
+
+    if (reportBatch.trim()) {
+      batches.set(reportBatch.trim().toLowerCase(), reportBatch.trim());
+    }
+
+    return Array.from(batches.values()).sort((a, b) => a.localeCompare(b));
+  }, [enrolledStudents, reportBatch, reportCourseType, sessions]);
+
   const eligibleStudentIds = useMemo(
     () => eligibleStudents.map((student) => student.id),
     [eligibleStudents],
@@ -476,6 +545,8 @@ const Attendance = () => {
 
   const pageError = leadsError || attendanceError;
   const isLoading = isLoadingLeads || isLoadingAttendance;
+  const repeatWeekday = repeatStartDate ? dayLabel(repeatStartDate) : "";
+  const canPreviewRecurringSchedule = Boolean(repeatStartDate && repeatWeekday && repeatMonths);
   const previewRecurringDates = recurringDates(
     repeatStartDate,
     repeatWeekday,
@@ -517,12 +588,18 @@ const Attendance = () => {
 
   const classStatusGroups = CLASS_STATUS_GROUPS.map((group) => ({
     ...group,
-    sessions: sortedFilteredSessions.filter(
-      (session) => classStatusForSession(session) === group.value,
-    ),
+    sessions:
+      group.value === "all"
+        ? sortedFilteredSessions
+        : sortedFilteredSessions.filter(
+            (session) => classStatusForSession(session) === group.value,
+          ),
   }));
   const activeClassGroup =
     classStatusGroups.find((group) => group.value === classStatusTab) ?? classStatusGroups[0];
+  const activeClassIds = activeClassGroup.sessions.map((session) => session.id);
+  const activeSelectedCount = activeClassIds.filter((id) => selectedClassIds.includes(id)).length;
+  const areAllActiveClassesSelected = activeClassIds.length > 0 && activeSelectedCount === activeClassIds.length;
 
   const openClassDialog = (session?: ClassSession) => {
     if (session) {
@@ -534,8 +611,8 @@ const Attendance = () => {
     } else {
       setEditingSessionId(null);
       setClassDate(todayString());
-      setClassTime("17:00");
-      setCourseType(COURSE_TYPES[0]);
+      setClassTime("");
+      setCourseType("");
       setClassBatch("");
     }
     setClassDialogOpen(true);
@@ -551,6 +628,32 @@ const Attendance = () => {
     setClassFilterBatch("");
   };
 
+  const handleReportCourseTypeChange = (value: string) => {
+    setReportCourseType(value);
+    setReportBatch("");
+  };
+
+  const resetClassFilters = () => {
+    setClassFilterDate("");
+    setClassFilterCourseType(ALL_CLASS_TYPES_VALUE);
+    setClassFilterBatch("");
+  };
+
+  const resetReportFilters = () => {
+    setReportSearch("");
+    setReportMonth(monthKey(todayString()));
+    setReportCourseType(ALL_CLASS_TYPES_VALUE);
+    setReportBatch("");
+  };
+
+  const clearRecurringScheduleForm = () => {
+    setCourseType("");
+    setClassBatch("");
+    setClassTime("");
+    setRepeatStartDate("");
+    setRepeatMonths("");
+  };
+
   const renderBatchSelect = () => (
     <Select
       value={classBatch || ALL_BATCHES_VALUE}
@@ -560,7 +663,7 @@ const Attendance = () => {
         <SelectValue placeholder="Select batch" />
       </SelectTrigger>
       <SelectContent className="bg-white text-[#1B4D3E]">
-        <SelectItem value={ALL_BATCHES_VALUE}>All batches</SelectItem>
+        <SelectItem value={ALL_BATCHES_VALUE} disabled>Select batch</SelectItem>
         {batchOptions.map((batch) => (
           <SelectItem key={batch} value={batch}>
             {batch}
@@ -589,8 +692,29 @@ const Attendance = () => {
     </Select>
   );
 
+  const renderReportBatchSelect = () => (
+    <Select
+      value={reportBatch || ALL_BATCHES_VALUE}
+      onValueChange={(value) => setReportBatch(value === ALL_BATCHES_VALUE ? "" : value)}
+    >
+      <SelectTrigger>
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent className="bg-white text-[#1B4D3E]">
+        <SelectItem value={ALL_BATCHES_VALUE}>All batches</SelectItem>
+        {reportBatchOptions.map((batch) => (
+          <SelectItem key={batch} value={batch}>
+            {batch}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+
   const scheduleYear = scheduleMonth.slice(0, 4);
   const scheduleMonthValue = scheduleMonth.slice(5, 7);
+  const reportYear = reportMonth.slice(0, 4);
+  const reportMonthValue = reportMonth.slice(5, 7);
   const yearOptions = Array.from(
     new Set([
       String(new Date().getFullYear() - 1),
@@ -602,6 +726,10 @@ const Attendance = () => {
 
   const setScheduleMonthPart = (part: "month" | "year", value: string) => {
     setScheduleMonth(part === "month" ? `${scheduleYear}-${value}` : `${value}-${scheduleMonthValue}`);
+  };
+
+  const setReportMonthPart = (part: "month" | "year", value: string) => {
+    setReportMonth(part === "month" ? `${reportYear}-${value}` : `${value}-${reportMonthValue}`);
   };
 
   const renderWeeklyScheduleControls = () => (
@@ -680,7 +808,42 @@ const Attendance = () => {
     );
   };
 
+  const toggleActiveClassSelection = () => {
+    setSelectedClassIds((current) =>
+      areAllActiveClassesSelected
+        ? current.filter((id) => !activeClassIds.includes(id))
+        : [...new Set([...current, ...activeClassIds])],
+    );
+  };
+
   const saveClass = async () => {
+    if (!courseType) {
+      toast({
+        title: "Select a class type",
+        description: "Choose a class type before saving this class.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!classBatch.trim()) {
+      toast({
+        title: "Select a batch",
+        description: "Classes need a batch so students can be added correctly.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!classTime) {
+      toast({
+        title: "Select a time",
+        description: "Choose a time before saving this class.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsSaving(true);
     try {
       const session = await attendanceStore.saveSession({
@@ -711,13 +874,58 @@ const Attendance = () => {
   };
 
   const createRecurringClasses = async () => {
+    if (!courseType) {
+      toast({
+        title: "Select a class type",
+        description: "Choose a class type before creating a recurring schedule.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!classBatch.trim()) {
+      toast({
+        title: "Select a batch",
+        description: "Recurring schedules need a batch so students can be added correctly.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!classTime) {
+      toast({
+        title: "Select a time",
+        description: "Choose a time before creating a recurring schedule.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!repeatStartDate) {
+      toast({
+        title: "Select a start date",
+        description: "Choose when this recurring schedule should begin.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!repeatMonths) {
+      toast({
+        title: "Select a duration",
+        description: "Choose how long this recurring schedule should run.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const months = Number.parseInt(repeatMonths, 10);
     const dates = recurringDates(repeatStartDate, repeatWeekday, months);
 
     if (dates.length === 0) {
       toast({
         title: "No classes created",
-        description: "Please check the start date, weekday, and duration.",
+        description: "Please check the start date and duration.",
         variant: "destructive",
       });
       return;
@@ -800,42 +1008,154 @@ const Attendance = () => {
     }
   };
 
+  const reportCutoffDate = todayString();
+  const isReportSessionInScope = (session: ClassSession) =>
+      monthKey(session.classDate) === reportMonth &&
+      (reportCourseType === ALL_CLASS_TYPES_VALUE || session.courseType === reportCourseType) &&
+      (!reportBatch || session.batch === reportBatch) &&
+      session.classDate <= reportCutoffDate;
+
   const reportSessions = sessions.filter(
     (session) =>
-      monthKey(session.classDate) === reportMonth &&
-      (reportCourseType === "all" || session.courseType === reportCourseType),
+      isReportSessionInScope(session) &&
+      classStatusForSession(session) === "complete",
+  );
+  const excludedReportSessions = sessions.filter(
+    (session) =>
+      isReportSessionInScope(session) &&
+      classStatusForSession(session) !== "complete",
   );
   const reportSessionIds = new Set(reportSessions.map((session) => session.id));
+  const reportSessionsById = new Map(reportSessions.map((session) => [session.id, session]));
   const reportRoster = allRoster.filter((member) => reportSessionIds.has(member.sessionId));
   const reportRecords = allAttendanceRecords.filter((record) => reportSessionIds.has(record.sessionId));
-  const reportRows = enrolledStudents.map((student) => {
-    const assigned = reportRoster.filter((member) => member.leadId === student.id).length;
+  const normalizedReportSearch = reportSearch.trim().toLowerCase();
+  const reportRows = leads.map((student) => {
+    const studentRoster = reportRoster.filter((member) => member.leadId === student.id);
+    const assigned = studentRoster.length;
     const studentRecords = reportRecords.filter((record) => record.leadId === student.id);
     const present = studentRecords.filter((record) => record.status === "present").length;
     const missed = studentRecords.filter((record) => record.status === "absent").length;
-    const unmarked = Math.max(assigned - studentRecords.length, 0);
     const rate = assigned === 0 ? 0 : Math.round((present / assigned) * 100);
-    return { student, assigned, present, missed, unmarked, rate };
-  }).filter((row) => row.assigned > 0 || row.missed > 0 || row.present > 0);
+    const classTypes = Array.from(
+      new Set(
+        studentRoster
+          .map((member) => reportSessionsById.get(member.sessionId)?.courseType)
+          .filter(Boolean) as string[],
+      ),
+    );
+    const batches = Array.from(
+      new Set(
+        studentRoster
+          .map((member) => reportSessionsById.get(member.sessionId)?.batch || "All batches")
+          .filter(Boolean),
+      ),
+    );
+    return { student, assigned, present, missed, rate, classTypes, batches };
+  }).filter((row) => {
+    if (row.assigned === 0 && row.missed === 0 && row.present === 0) return false;
+    if (!normalizedReportSearch) return true;
+    return [
+      row.student.name,
+      row.student.email,
+      row.student.rollNumber ?? "",
+    ].some((value) => value.toLowerCase().includes(normalizedReportSearch));
+  }).sort((a, b) => a.student.name.localeCompare(b.student.name));
+  const reportTotals = reportRows.reduce(
+    (totals, row) => ({
+      students: totals.students + 1,
+      classes: totals.classes + row.assigned,
+      present: totals.present + row.present,
+      absent: totals.absent + row.missed,
+    }),
+    { students: 0, classes: 0, present: 0, absent: 0 },
+  );
+  const reportAverage =
+    reportTotals.classes === 0
+      ? 0
+      : Math.round((reportTotals.present / reportTotals.classes) * 100);
+  const reportExportRows = reportRows.map((row) => ({
+    Student: row.student.name,
+    Email: row.student.email,
+    "Roll No": row.student.rollNumber || "",
+    Class: row.classTypes.join(", "),
+    Batch: row.batches.join(", "),
+    Classes: row.assigned,
+    Present: row.present,
+    Absent: row.missed,
+    "Attendance %": row.rate,
+  }));
 
-  const renderAutoRosterSummary = () => (
+  const reportFileName = `attendance-report-${reportMonth}${reportCourseType === ALL_CLASS_TYPES_VALUE ? "" : `-${reportCourseType.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}${reportBatch ? `-${reportBatch.toLowerCase().replace(/[^a-z0-9]+/g, "-")}` : ""}`;
+
+  const downloadReportCsv = () => {
+    const headers = Object.keys(reportExportRows[0] ?? {
+      Student: "",
+      Email: "",
+      "Roll No": "",
+      Class: "",
+      Batch: "",
+      Classes: "",
+      Present: "",
+      Absent: "",
+      "Attendance %": "",
+    });
+    const escapeCsv = (value: unknown) => {
+      const text = String(value ?? "");
+      return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+    };
+    const csv = [
+      headers.join(","),
+      ...reportExportRows.map((row) => headers.map((header) => escapeCsv(row[header as keyof typeof row])).join(",")),
+    ].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${reportFileName}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const downloadReportExcel = async () => {
+    const XLSX = await import("xlsx");
+    const worksheet = XLSX.utils.json_to_sheet(reportExportRows);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Attendance Report");
+    XLSX.writeFile(workbook, `${reportFileName}.xlsx`);
+  };
+
+  const renderAutoRosterSummary = (contextLabel = "schedule", showExplanation = true) => (
     <div className="space-y-3">
-      <div className="rounded-md border border-border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
-        Students are added automatically from enrolled students matching{" "}
-        <span className="font-medium text-foreground">{courseType}</span>
-        {classBatch.trim() ? <> in <span className="font-medium text-foreground">{classBatch.trim()}</span>.</> : "."}
-      </div>
-      {eligibleStudents.length === 0 ? (
+      {showExplanation && (
+        <div className="rounded-md border border-border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+          Students are added automatically from enrolled students matching{" "}
+          <span className="font-medium text-foreground">{courseType || "a selected class type"}</span>
+          {classBatch.trim() ? <> in <span className="font-medium text-foreground">{classBatch.trim()}</span>.</> : " after a batch is selected."}
+        </div>
+      )}
+      {!courseType ? (
         <p className="text-sm text-muted-foreground">
-          No enrolled students match this class type and format.
+          Select a class type to see students for this {contextLabel}.
+        </p>
+      ) : !classBatch.trim() ? (
+        <p className="text-sm text-muted-foreground">
+          Select a batch to see students for this {contextLabel}.
+        </p>
+      ) : eligibleStudents.length === 0 ? (
+        <p className="text-sm text-muted-foreground">
+          No enrolled students match this class type and batch.
         </p>
       ) : (
         <div className="rounded-md border border-border bg-background p-3">
           <p className="font-medium">{eligibleStudents.length} students will be added</p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {eligibleStudents.slice(0, 3).map((student) => student.name).join(", ")}
-            {eligibleStudents.length > 3 ? ` and ${eligibleStudents.length - 3} more` : ""}
-          </p>
+          <div className="mt-2 max-h-36 space-y-1 overflow-y-auto pr-1">
+            {eligibleStudents.map((student) => (
+              <p key={student.id} className="text-sm text-muted-foreground">
+                {student.name}
+              </p>
+            ))}
+          </div>
         </div>
       )}
     </div>
@@ -869,19 +1189,35 @@ const Attendance = () => {
   };
 
   const renderScheduleClass = (session: ClassSession) => (
-    <button
+    <div
       key={session.id}
-      type="button"
-      onClick={() => navigate(`/admin/attendance/${session.id}`)}
-      className="w-full min-w-0 rounded-md border border-border bg-background p-2 text-left transition hover:border-[#C9922A] hover:bg-[#F5ECD7]/40"
+      className="w-full min-w-0 rounded-md border border-border bg-background p-2 transition hover:border-[#C9922A] hover:bg-[#F5ECD7]/40"
     >
-      <div className="flex min-w-0 flex-col items-start gap-2">
-        <p className="text-sm font-medium">{formatTime(session.classTime)}</p>
-        {renderClassStatusBadge(session)}
+      <div className="flex items-start justify-between gap-2">
+        <button
+          type="button"
+          onClick={() => navigate(`/admin/attendance/${session.id}`)}
+          className="min-w-0 flex-1 text-left"
+        >
+          <div className="flex min-w-0 flex-col items-start gap-2">
+            <p className="text-sm font-medium">{formatTime(session.classTime)}</p>
+            {renderClassStatusBadge(session)}
+          </div>
+          <p className="mt-1 line-clamp-2 text-sm text-foreground">{session.courseType}</p>
+          <p className="mt-1 truncate text-xs text-muted-foreground">{session.batch || "All batches"}</p>
+        </button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
+          onClick={() => setPendingDeleteSession(session)}
+          aria-label={`Delete ${session.courseType} on ${displayDate(session.classDate)}`}
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
       </div>
-      <p className="mt-1 line-clamp-2 text-sm text-foreground">{session.courseType}</p>
-      <p className="mt-1 truncate text-xs text-muted-foreground">{session.batch || "All batches"}</p>
-    </button>
+    </div>
   );
 
   const renderWeeklySchedule = () => (
@@ -979,7 +1315,35 @@ const Attendance = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[48px]"></TableHead>
+              <TableHead className="w-[48px]">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          toggleActiveClassSelection();
+                        }}
+                        disabled={group.sessions.length === 0}
+                        aria-label={areAllActiveClassesSelected ? "Deselect classes" : "Select classes"}
+                      >
+                        {areAllActiveClassesSelected ? (
+                          <SquareMinus className="w-4 h-4" />
+                        ) : (
+                          <CheckSquare className="w-4 h-4" />
+                        )}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      {areAllActiveClassesSelected ? "Deselect classes" : "Select classes"}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </TableHead>
               <TableHead>Date</TableHead>
               <TableHead>Time</TableHead>
               <TableHead>Class Type</TableHead>
@@ -1050,13 +1414,15 @@ const Attendance = () => {
             {pageError ? "Unable to load attendance." : "Schedule classes and mark attendance for matching enrolled students."}
           </p>
         </div>
-        <Button type="button" onClick={() => openClassDialog()}>
-          <Plus className="w-4 h-4" />
-          Add Class
-        </Button>
+        {attendanceTab === "classes" && (
+          <Button type="button" onClick={() => openClassDialog()}>
+            <Plus className="w-4 h-4" />
+            Add Class
+          </Button>
+        )}
       </div>
 
-      <Tabs defaultValue="classes" className="space-y-5">
+      <Tabs value={attendanceTab} onValueChange={setAttendanceTab} className="space-y-5">
         <div className="overflow-x-auto pb-1">
           <TabsList className="h-auto min-w-max justify-start">
             <TabsTrigger value="classes">Classes</TabsTrigger>
@@ -1135,12 +1501,9 @@ const Attendance = () => {
                       type="button"
                       variant="outline"
                       className="w-full md:w-auto"
-                      onClick={() => {
-                        setClassFilterDate("");
-                        setClassFilterCourseType(ALL_CLASS_TYPES_VALUE);
-                        setClassFilterBatch("");
-                      }}
+                      onClick={resetClassFilters}
                     >
+                      <RotateCcw className="w-4 h-4" />
                       Clear filters
                     </Button>
                   </div>
@@ -1152,26 +1515,9 @@ const Attendance = () => {
                   <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                     <p className="text-sm text-muted-foreground">
                       Showing {activeClassGroup.sessions.length} of {filteredSessions.length} filtered classes
+                      {selectedClassIds.length > 0 ? ` · ${selectedClassIds.length} selected` : ""}
                     </p>
                     <div className="flex min-w-0 flex-wrap gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setSelectedClassIds(activeClassGroup.sessions.map((session) => session.id))}
-                        disabled={activeClassGroup.sessions.length === 0}
-                      >
-                        Select Classes
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setSelectedClassIds([])}
-                        disabled={selectedClassIds.length === 0}
-                      >
-                        Clear
-                      </Button>
                       <Button
                         type="button"
                         variant="destructive"
@@ -1266,27 +1612,171 @@ const Attendance = () => {
 
         <TabsContent value="recurring" className="space-y-5">
           <Card variant="default" className="p-5">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+            <div>
               <div>
                 <h2 className="font-display text-lg font-semibold">Recurring Schedule</h2>
                 <p className="text-sm text-muted-foreground">
                   Create the same class weekly for a period of time.
                 </p>
               </div>
+            </div>
+
+            <div className="mt-5 grid gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
+              <div>
+                <h3 className="mb-3 font-medium">Schedule Details</h3>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">Class Type</p>
+                    <Select
+                      value={courseType || SELECT_CLASS_TYPE_VALUE}
+                      onValueChange={(value) => handleCourseTypeChange(value === SELECT_CLASS_TYPE_VALUE ? "" : value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white text-[#1B4D3E]">
+                        <SelectItem value={SELECT_CLASS_TYPE_VALUE} disabled>Select Class Type</SelectItem>
+                        {COURSE_OPTIONS.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">Batch</p>
+                    {renderBatchSelect()}
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">Start Date</p>
+                    <DatePicker value={repeatStartDate} onChange={setRepeatStartDate} placeholder="Select Start Date" />
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {repeatStartDate ? displayDate(repeatStartDate) : "Select Start Date"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">Time</p>
+                    <TimePicker value={classTime} onChange={setClassTime} />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">Every</p>
+                    <div className="flex min-h-10 items-center rounded-md border border-input bg-muted/30 px-3 text-sm">
+                      <span className={repeatWeekday ? "text-foreground" : "text-muted-foreground"}>
+                        {repeatWeekday || "Select Start Date"}
+                      </span>
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">Duration</p>
+                    <Select value={repeatMonths || undefined} onValueChange={setRepeatMonths}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select Duration" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white text-[#1B4D3E]">
+                        <SelectItem value="1">1 month</SelectItem>
+                        <SelectItem value="2">2 months</SelectItem>
+                        <SelectItem value="3">3 months</SelectItem>
+                        <SelectItem value="6">6 months</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-5 border-t border-border pt-5 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0">
+                <div>
+                  <h3 className="mb-3 font-medium">Preview</h3>
+                  <div className="rounded-md border border-border bg-muted/30 px-3 py-3 text-sm">
+                    {canPreviewRecurringSchedule ? (
+                      <>
+                        <p className="font-medium">{previewRecurringDates.length} classes</p>
+                        <p className="text-muted-foreground">
+                          {previewRecurringDates.length > 0
+                            ? `${displayDate(previewRecurringDates[0])}${previewRecurringDates.length > 1 ? ` to ${displayDate(previewRecurringDates[previewRecurringDates.length - 1])}` : ""}`
+                            : "No dates match this schedule."}
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="font-medium">Schedule preview</p>
+                        <p className="text-muted-foreground">
+                          Select start date, day, and duration.
+                        </p>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="mb-3 font-medium">Students</h3>
+                  {renderAutoRosterSummary("schedule", false)}
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 flex flex-wrap justify-end gap-2 border-t border-border pt-4">
+              <Button type="button" variant="outline" onClick={clearRecurringScheduleForm} disabled={isSaving}>
+                <RotateCcw className="w-4 h-4" />
+                Clear
+              </Button>
               <Button type="button" onClick={createRecurringClasses} disabled={isSaving}>
                 <CalendarCheck className="w-4 h-4" />
                 Create Schedule
               </Button>
             </div>
+          </Card>
+        </TabsContent>
 
-            <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <TabsContent value="reports" className="space-y-5">
+          <Card variant="default" className="p-5">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5 lg:items-end">
+              <div className="sm:col-span-2 lg:col-span-2">
+                <p className="text-sm text-muted-foreground mb-1">Search Student</p>
+                <Input
+                  value={reportSearch}
+                  onChange={(event) => setReportSearch(event.target.value)}
+                  placeholder="Name, email, or roll no"
+                />
+              </div>
               <div>
-                <p className="text-sm text-muted-foreground mb-1">Class Type</p>
-                <Select value={courseType} onValueChange={handleCourseTypeChange}>
+                <p className="text-sm text-muted-foreground mb-1">Month</p>
+                <Select value={reportMonthValue} onValueChange={(value) => setReportMonthPart("month", value)}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-white text-[#1B4D3E]">
+                    {MONTH_OPTIONS.map((month) => (
+                      <SelectItem key={month.value} value={month.value}>
+                        {month.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Year</p>
+                <Select value={reportYear} onValueChange={(value) => setReportMonthPart("year", value)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white text-[#1B4D3E]">
+                    {yearOptions.map((year) => (
+                      <SelectItem key={year} value={year}>
+                        {year}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Class Type</p>
+                <Select value={reportCourseType} onValueChange={handleReportCourseTypeChange}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white text-[#1B4D3E]">
+                    <SelectItem value={ALL_CLASS_TYPES_VALUE}>All classes</SelectItem>
                     {COURSE_OPTIONS.map((option) => (
                       <SelectItem key={option.value} value={option.value}>
                         {option.label}
@@ -1297,103 +1787,88 @@ const Attendance = () => {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground mb-1">Batch</p>
-                {renderBatchSelect()}
+                {renderReportBatchSelect()}
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground mb-1">Time</p>
-                <TimePicker value={classTime} onChange={setClassTime} />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground mb-1">Start Date</p>
-                <DatePicker value={repeatStartDate} onChange={setRepeatStartDate} />
-                <p className="mt-1 text-xs text-muted-foreground">{displayDate(repeatStartDate)}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground mb-1">Every</p>
-                <Select value={repeatWeekday} onValueChange={setRepeatWeekday}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white text-[#1B4D3E]">
-                    {WEEKDAYS.map((weekday) => (
-                      <SelectItem key={weekday} value={weekday}>
-                        {weekday}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground mb-1">Duration</p>
-                <Select value={repeatMonths} onValueChange={setRepeatMonths}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white text-[#1B4D3E]">
-                    <SelectItem value="1">1 month</SelectItem>
-                    <SelectItem value="2">2 months</SelectItem>
-                    <SelectItem value="3">3 months</SelectItem>
-                    <SelectItem value="6">6 months</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="sm:col-span-2 lg:col-span-2">
-                <p className="text-sm text-muted-foreground mb-1">Preview</p>
-                <div className="rounded-md border border-border bg-muted/30 px-3 py-2 text-sm">
-                  <p className="font-medium">{previewRecurringDates.length} classes</p>
-                  <p className="text-muted-foreground">
-                    {previewRecurringDates[0] ? displayDate(previewRecurringDates[0]) : "-"}
-                    {previewRecurringDates.length > 1
-                      ? ` to ${displayDate(previewRecurringDates[previewRecurringDates.length - 1])}`
-                      : ""}
-                  </p>
-                </div>
+              <div className="flex sm:items-end lg:col-start-1">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full sm:w-auto"
+                  onClick={resetReportFilters}
+                >
+                  <RotateCcw className="w-4 h-4" />
+                  Clear filters
+                </Button>
               </div>
             </div>
-          </Card>
-
-          <Card variant="default" className="p-5">
-            <h2 className="font-display text-lg font-semibold mb-3">Students For This Schedule</h2>
-            {renderAutoRosterSummary()}
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="reports" className="space-y-5">
-          <Card variant="default" className="p-5">
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-5 grid gap-4 border-t border-border pt-4 sm:grid-cols-3 lg:grid-cols-6">
               <div>
-                <p className="text-sm text-muted-foreground mb-1">Month</p>
-                <Input type="month" value={reportMonth} onChange={(event) => setReportMonth(event.target.value)} />
+                <p className="text-xs text-muted-foreground">Completed</p>
+                <p className="font-display text-xl font-bold">{reportSessions.length}</p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground mb-1">Class Type</p>
-                <Select value={reportCourseType} onValueChange={setReportCourseType}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white text-[#1B4D3E]">
-                    <SelectItem value="all">All classes</SelectItem>
-                    {COURSE_OPTIONS.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <p className="text-xs text-muted-foreground">Incomplete</p>
+                <p className="font-display text-xl font-bold">{excludedReportSessions.length}</p>
               </div>
-              <div className="rounded-md border border-border bg-muted/30 px-3 py-2 text-sm">
-                <p className="text-muted-foreground">Classes in {displayMonth(reportMonth)}</p>
-                <p className="font-display text-2xl font-bold">{reportSessions.length}</p>
+              <div>
+                <p className="text-xs text-muted-foreground">Students</p>
+                <p className="font-display text-xl font-bold">{reportTotals.students}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Present</p>
+                <p className="font-display text-xl font-bold">{reportTotals.present}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Absent</p>
+                <p className="font-display text-xl font-bold">{reportTotals.absent}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Average</p>
+                <p className="font-display text-xl font-bold">{reportAverage}%</p>
               </div>
             </div>
           </Card>
 
           <Card variant="default" className="p-0 overflow-hidden">
+            <div className="flex flex-col gap-3 border-b border-border p-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="font-display text-lg font-semibold">Student Attendance</h2>
+                <p className="text-sm text-muted-foreground">
+                  {displayMonth(reportMonth)} · completed classes only
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={downloadReportCsv}
+                  disabled={reportRows.length === 0}
+                >
+                  <Download className="h-4 w-4" />
+                  CSV
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => void downloadReportExcel()}
+                  disabled={reportRows.length === 0}
+                >
+                  <Download className="h-4 w-4" />
+                  Excel
+                </Button>
+              </div>
+            </div>
             {reportRows.length === 0 ? (
               <div className="text-center py-16 px-4 text-muted-foreground">
                 <Users className="w-12 h-12 mx-auto mb-3 opacity-40" />
                 <p className="font-medium text-foreground">No report data</p>
-                <p className="text-sm mt-1">Create classes with matching enrolled students to see reports.</p>
+                <p className="text-sm mt-1">
+                  {reportSearch.trim()
+                    ? "No student matches this search in the selected report."
+                    : "Create completed classes with matching enrolled students to see reports."}
+                </p>
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -1402,31 +1877,42 @@ const Attendance = () => {
                     <TableRow>
                       <TableHead>Student</TableHead>
                       <TableHead>Roll No</TableHead>
-                      <TableHead>Classes</TableHead>
+                      <TableHead>Class</TableHead>
+                      <TableHead>Batch</TableHead>
                       <TableHead>Present</TableHead>
                       <TableHead>Absent</TableHead>
-                      <TableHead>Pending</TableHead>
                       <TableHead>Attendance %</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {reportRows.map((row) => (
                       <TableRow key={row.student.id}>
-                        <TableCell>
-                          <p className="font-medium">{row.student.name}</p>
-                          <p className="text-sm text-muted-foreground">{row.student.email}</p>
+                        <TableCell className="min-w-[180px]">
+                          <p className="break-words font-medium">{row.student.name}</p>
+                          <p className="break-all text-sm text-muted-foreground">{row.student.email}</p>
                         </TableCell>
                         <TableCell className="font-semibold text-[#7A8C7E]">
                           {row.student.rollNumber || "-"}
                         </TableCell>
-                        <TableCell>{row.assigned}</TableCell>
+                        <TableCell>
+                          <p className="max-w-[220px] whitespace-normal">
+                            {row.classTypes.join(", ") || "-"}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {row.assigned} {row.assigned === 1 ? "class" : "classes"}
+                          </p>
+                        </TableCell>
+                        <TableCell>
+                          <p className="max-w-[180px] whitespace-normal">
+                            {row.batches.join(", ") || "-"}
+                          </p>
+                        </TableCell>
                         <TableCell>{row.present}</TableCell>
                         <TableCell>
                           <Badge className={row.missed > 0 ? "bg-orange-500/15 text-orange-700" : "bg-green-500/15 text-green-700"}>
                             {row.missed}
                           </Badge>
                         </TableCell>
-                        <TableCell>{row.unmarked}</TableCell>
                         <TableCell>{row.rate}%</TableCell>
                       </TableRow>
                     ))}
@@ -1445,23 +1931,21 @@ const Attendance = () => {
           if (!open) setEditingSessionId(null);
         }}
       >
-        <DialogContent className="max-w-3xl">
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Class</DialogTitle>
+            <DialogTitle>{editingSessionId ? "Edit Class" : "Add Class"}</DialogTitle>
             <DialogDescription>
-              Add a class with date, day, time, type, and batch. Matching enrolled students are added automatically.
+              Add date, time, class type, and batch. Matching enrolled students are added automatically.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <p className="text-sm text-muted-foreground mb-1">Date</p>
               <DatePicker value={classDate} onChange={setClassDate} />
-              <p className="mt-1 text-xs text-muted-foreground">{displayDate(classDate)}</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground mb-1">Day</p>
-              <Input value={dayLabel(classDate)} disabled />
+              <p className="mt-1 text-xs text-muted-foreground">
+                {displayDate(classDate)} · {dayLabel(classDate)}
+              </p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground mb-1">Time</p>
@@ -1469,11 +1953,15 @@ const Attendance = () => {
             </div>
             <div>
               <p className="text-sm text-muted-foreground mb-1">Class Type</p>
-              <Select value={courseType} onValueChange={handleCourseTypeChange}>
+              <Select
+                value={courseType || SELECT_CLASS_TYPE_VALUE}
+                onValueChange={(value) => handleCourseTypeChange(value === SELECT_CLASS_TYPE_VALUE ? "" : value)}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-white text-[#1B4D3E]">
+                  <SelectItem value={SELECT_CLASS_TYPE_VALUE} disabled>Select Class Type</SelectItem>
                   {COURSE_OPTIONS.map((option) => (
                     <SelectItem key={option.value} value={option.value}>
                       {option.label}
@@ -1490,7 +1978,7 @@ const Attendance = () => {
 
           <div className="mt-4">
             <h3 className="font-medium mb-3">Students</h3>
-            {renderAutoRosterSummary()}
+            {renderAutoRosterSummary("class")}
           </div>
 
           <div className="mt-5 flex justify-end gap-2">
