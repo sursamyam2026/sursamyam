@@ -40,6 +40,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Download, Eye, Inbox, Trash2, Upload, Users } from "lucide-react";
 import { useLeads } from "@/hooks/use-leads";
 import { leadsStore, type Lead, type LeadStatus } from "@/lib/leads";
+import { sendEnrollmentConfirmationEmail } from "@/lib/enrollment-email";
 import { parseLeadImportFile } from "@/lib/lead-import";
 import { useToast } from "@/hooks/use-toast";
 
@@ -242,10 +243,22 @@ const Leads = () => {
 
   const handleStatusChange = async (leadId: string, status: LeadStatus) => {
     try {
-      const { assignedRollNumber } = await leadsStore.updateStatus(leadId, status);
-      if (assignedRollNumber) {
+      const { lead, assignedRollNumber } = await leadsStore.updateStatus(leadId, status);
+      if (lead && assignedRollNumber) {
+        let emailSent = false;
+        try {
+          emailSent = (await sendEnrollmentConfirmationEmail({ lead, rollNumber: assignedRollNumber })).sent;
+        } catch (emailErr) {
+          toast({
+            title: "Enrollment updated, but email was not sent",
+            description: emailErr instanceof Error ? emailErr.message : "Please check the email function setup.",
+            variant: "destructive",
+          });
+        }
+
         toast({
           title: `Roll number ${assignedRollNumber} assigned successfully`,
+          description: emailSent ? `Confirmation email sent to ${lead.email}.` : undefined,
           className: "border-[#C9922A] bg-[#1B4D3E] text-[#FDF6EC]",
         });
       }

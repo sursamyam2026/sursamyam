@@ -65,6 +65,31 @@ the existing lead status constraint.
 To add attendance tracking to an existing Supabase project, run
 `supabase/attendance.sql` once in SQL Editor after admin auth is configured.
 
+## Enrollment Confirmation Email
+
+When an admin changes a registered student to Enrolled, the app assigns a roll
+number and invokes the Supabase Edge Function in
+`supabase/functions/send-enrollment-confirmation`.
+
+The function verifies the caller is an authenticated admin, then sends the email
+through Resend. Configure these function secrets in Supabase:
+
+```sh
+supabase secrets set RESEND_API_KEY=YOUR_RESEND_API_KEY
+supabase secrets set ENROLLMENT_FROM_EMAIL="Sur Samyam <no-reply@your-domain.com>"
+supabase secrets set ENROLLMENT_REPLY_TO="sursamyam@gmail.com"
+```
+
+Then deploy the function:
+
+```sh
+supabase functions deploy send-enrollment-confirmation
+```
+
+The confirmation email includes the student's name, a confirmation message, and
+the assigned roll number. Local-storage development mode still assigns roll
+numbers, but skips email sending because there is no Supabase Edge Function.
+
 ## Gallery And Exam Registrations
 
 Gallery metadata is stored in `gallery_images`. The current app stores uploaded
