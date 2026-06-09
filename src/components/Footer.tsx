@@ -6,8 +6,8 @@ const Footer = () => {
   const currentYear = new Date().getFullYear();
 
   const socialLinks = [
-    { icon: Instagram, href: "#", label: "Instagram" },
-    { icon: Youtube, href: "#", label: "YouTube" },
+    { icon: Instagram, href: "https://www.instagram.com/sur_samyam/", label: "Instagram" },
+    { icon: Youtube, href: "https://www.youtube.com/@sursamyam", label: "YouTube" },
     { icon: Mail, href: "mailto:sursamyam@gmail.com", label: "Email" },
   ];
 
@@ -73,6 +73,8 @@ const Footer = () => {
                     key={social.label}
                     href={social.href}
                     aria-label={social.label}
+                    target={social.href.startsWith("http") ? "_blank" : undefined}
+                    rel={social.href.startsWith("http") ? "noreferrer" : undefined}
                     className="flex h-10 w-10 items-center justify-center rounded-full bg-[#1B4D3E]/25 text-[#C9922A] transition-colors hover:bg-[#1B4D3E]/45"
                   >
                     <social.icon className="h-5 w-5" />

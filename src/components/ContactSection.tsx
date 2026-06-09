@@ -72,7 +72,7 @@ const ContactSection = () => {
       icon: MapPin,
       label: "Location",
       value: "Sarjapur, Bangalore, India",
-      href: "#",
+      href: "https://share.google/XluclI0VJciMwD3iM",
     },
   ];
 
@@ -116,6 +116,8 @@ const ContactSection = () => {
                   <a
                     key={item.label}
                     href={item.href}
+                    target={item.href.startsWith("http") ? "_blank" : undefined}
+                    rel={item.href.startsWith("http") ? "noreferrer" : undefined}
                     className="group flex items-center gap-4 rounded-xl bg-white p-4 transition-colors hover:bg-white"
                   >
                     <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#F5ECD7]">
