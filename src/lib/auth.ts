@@ -1,10 +1,8 @@
 import { supabase } from "@/lib/supabase";
 
-const SESSION_KEY = "swarshiksha:admin-session";
-const EVENT = "swarshiksha:auth:changed";
+const EVENT = "sursamyam:auth:changed";
 
-export const ADMIN_EMAIL = "admin@swarshiksha.com";
-export const ADMIN_PASSWORD = "admin123";
+export const ADMIN_EMAIL = "admin@sursamyam.com";
 
 export interface AdminSession {
   email: string;
@@ -36,19 +34,9 @@ async function getSupabaseAdminSession(): Promise<AdminSession | null> {
   };
 }
 
-function getLocalSession(): AdminSession | null {
-  try {
-    const raw = localStorage.getItem(SESSION_KEY);
-    return raw ? (JSON.parse(raw) as AdminSession) : null;
-  } catch {
-    return null;
-  }
-}
-
 export const auth = {
   async getSession(): Promise<AdminSession | null> {
-    if (supabase) return getSupabaseAdminSession();
-    return getLocalSession();
+    return getSupabaseAdminSession();
   },
 
   async isAuthenticated(): Promise<boolean> {
@@ -62,13 +50,10 @@ export const auth = {
     const e = email.trim().toLowerCase();
 
     if (!supabase) {
-      if (e !== ADMIN_EMAIL.toLowerCase() || password !== ADMIN_PASSWORD) {
-        return { ok: false, error: "Invalid email or password." };
-      }
-      const session: AdminSession = { email: ADMIN_EMAIL, loggedInAt: new Date().toISOString() };
-      localStorage.setItem(SESSION_KEY, JSON.stringify(session));
-      notifyAuthChanged();
-      return { ok: true };
+      return {
+        ok: false,
+        error: "Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.",
+      };
     }
 
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -98,8 +83,6 @@ export const auth = {
   async logout(): Promise<void> {
     if (supabase) {
       await supabase.auth.signOut();
-    } else {
-      localStorage.removeItem(SESSION_KEY);
     }
     notifyAuthChanged();
   },
@@ -107,7 +90,6 @@ export const auth = {
   subscribe(cb: () => void): () => void {
     const handler = () => cb();
     window.addEventListener(EVENT, handler);
-    window.addEventListener("storage", handler);
 
     const authSubscription = supabase?.auth.onAuthStateChange(() => {
       cb();
@@ -115,7 +97,6 @@ export const auth = {
 
     return () => {
       window.removeEventListener(EVENT, handler);
-      window.removeEventListener("storage", handler);
       authSubscription?.unsubscribe();
     };
   },

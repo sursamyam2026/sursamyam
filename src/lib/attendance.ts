@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+import { requireSupabase, supabase } from "@/lib/supabase";
 import type {
   AttendanceInput,
   AttendanceRecord,
@@ -45,10 +45,7 @@ interface AttendanceRow {
   class_sessions?: { class_date: string } | null;
 }
 
-const RECORDS_KEY = "swarshiksha:attendance";
-const SESSIONS_KEY = "swarshiksha:class-sessions";
-const ROSTER_KEY = "swarshiksha:class-roster";
-const EVENT = "swarshiksha:attendance:changed";
+const EVENT = "sursamyam:attendance:changed";
 
 function uniqueChannelName(name: string): string {
   return `${name}:${Date.now()}:${Math.random().toString(36).slice(2)}`;
@@ -117,110 +114,6 @@ function fromAttendanceRow(row: AttendanceRow, sessionDate = ""): AttendanceReco
   };
 }
 
-function coerceSession(raw: unknown): ClassSession | null {
-  if (!raw || typeof raw !== "object") return null;
-  const item = raw as Record<string, unknown>;
-  const id = typeof item.id === "string" ? item.id : "";
-  const classDate = typeof item.classDate === "string" ? item.classDate : "";
-  const classDay = typeof item.classDay === "string" ? item.classDay : dayLabel(classDate);
-  const classTime = typeof item.classTime === "string" ? item.classTime : "";
-  const courseType = typeof item.courseType === "string" ? item.courseType : "";
-  if (!id || !classDate || !classTime || !courseType) return null;
-  return {
-    id,
-    classDate,
-    classDay: classDay || dayLabel(classDate),
-    classTime,
-    courseType,
-    batch: typeof item.batch === "string" ? item.batch : undefined,
-    createdAt: typeof item.createdAt === "string" ? item.createdAt : new Date().toISOString(),
-    updatedAt: typeof item.updatedAt === "string" ? item.updatedAt : new Date().toISOString(),
-  };
-}
-
-function coerceRosterMember(raw: unknown): ClassRosterMember | null {
-  if (!raw || typeof raw !== "object") return null;
-  const item = raw as Record<string, unknown>;
-  const id = typeof item.id === "string" ? item.id : "";
-  const sessionId = typeof item.sessionId === "string" ? item.sessionId : "";
-  const leadId = typeof item.leadId === "string" ? item.leadId : "";
-  if (!id || !sessionId || !leadId) return null;
-  return {
-    id,
-    sessionId,
-    leadId,
-    createdAt: typeof item.createdAt === "string" ? item.createdAt : new Date().toISOString(),
-  };
-}
-
-function coerceRecord(raw: unknown): AttendanceRecord | null {
-  if (!raw || typeof raw !== "object") return null;
-  const item = raw as Record<string, unknown>;
-  const id = typeof item.id === "string" ? item.id : "";
-  const sessionId = typeof item.sessionId === "string" ? item.sessionId : "";
-  const leadId = typeof item.leadId === "string" ? item.leadId : "";
-  const classDate = typeof item.classDate === "string" ? item.classDate : "";
-  const status = item.status === "absent" ? "absent" : item.status === "present" ? "present" : null;
-  if (!id || !sessionId || !leadId || !classDate || !status) return null;
-  return {
-    id,
-    sessionId,
-    leadId,
-    classDate,
-    status,
-    notes: typeof item.notes === "string" ? item.notes : undefined,
-    createdAt: typeof item.createdAt === "string" ? item.createdAt : new Date().toISOString(),
-    updatedAt: typeof item.updatedAt === "string" ? item.updatedAt : new Date().toISOString(),
-  };
-}
-
-function readLocalSessions(): ClassSession[] {
-  try {
-    const raw = localStorage.getItem(SESSIONS_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    return parsed.map(coerceSession).filter(Boolean) as ClassSession[];
-  } catch {
-    return [];
-  }
-}
-
-function readLocalRoster(): ClassRosterMember[] {
-  try {
-    const raw = localStorage.getItem(ROSTER_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    return parsed.map(coerceRosterMember).filter(Boolean) as ClassRosterMember[];
-  } catch {
-    return [];
-  }
-}
-
-function readLocalRecords(): AttendanceRecord[] {
-  try {
-    const raw = localStorage.getItem(RECORDS_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    return parsed.map(coerceRecord).filter(Boolean) as AttendanceRecord[];
-  } catch {
-    return [];
-  }
-}
-
-function writeLocal(
-  sessions: ClassSession[],
-  records = readLocalRecords(),
-  roster = readLocalRoster(),
-) {
-  localStorage.setItem(SESSIONS_KEY, JSON.stringify(sessions));
-  localStorage.setItem(RECORDS_KEY, JSON.stringify(records));
-  localStorage.setItem(ROSTER_KEY, JSON.stringify(roster));
-  window.dispatchEvent(new Event(EVENT));
-}
-
 export interface AttendanceRepository {
   list(): Promise<AttendanceRecord[]>;
   listSessions(): Promise<ClassSession[]>;
@@ -236,8 +129,8 @@ export interface AttendanceRepository {
 
 const supabaseAttendanceStore: AttendanceRepository = {
   async list() {
-    if (!supabase) return [];
-    const { data, error } = await supabase
+    const db = requireSupabase();
+    const { data, error } = await db
       .from("attendance_records")
       .select("id,session_id,lead_id,status,notes,created_at,updated_at,class_sessions(class_date)")
       .order("created_at", { ascending: false });
@@ -250,8 +143,8 @@ const supabaseAttendanceStore: AttendanceRepository = {
   },
 
   async listSessions() {
-    if (!supabase) return [];
-    const { data, error } = await supabase
+    const db = requireSupabase();
+    const { data, error } = await db
       .from("class_sessions")
       .select("id,class_date,class_day,class_time,course_type,batch,created_at,updated_at")
       .order("class_date", { ascending: false })
@@ -265,8 +158,8 @@ const supabaseAttendanceStore: AttendanceRepository = {
   },
 
   async listRosterBySession(sessionId) {
-    if (!supabase) return [];
-    const { data, error } = await supabase
+    const db = requireSupabase();
+    const { data, error } = await db
       .from("class_roster")
       .select("id,session_id,lead_id,created_at")
       .eq("session_id", sessionId);
@@ -279,8 +172,8 @@ const supabaseAttendanceStore: AttendanceRepository = {
   },
 
   async listRoster() {
-    if (!supabase) return [];
-    const { data, error } = await supabase
+    const db = requireSupabase();
+    const { data, error } = await db
       .from("class_roster")
       .select("id,session_id,lead_id,created_at");
 
@@ -292,8 +185,8 @@ const supabaseAttendanceStore: AttendanceRepository = {
   },
 
   async listBySession(sessionId) {
-    if (!supabase) return [];
-    const { data, error } = await supabase
+    const db = requireSupabase();
+    const { data, error } = await db
       .from("attendance_records")
       .select("id,session_id,lead_id,status,notes,created_at,updated_at,class_sessions(class_date)")
       .eq("session_id", sessionId);
@@ -306,9 +199,9 @@ const supabaseAttendanceStore: AttendanceRepository = {
   },
 
   async saveSession(input) {
-    if (!supabase) throw new Error("Supabase is not configured.");
+    const db = requireSupabase();
     const now = new Date().toISOString();
-    const { data: existingRows, error: existingError } = await supabase
+    const { data: existingRows, error: existingError } = await db
       .from("class_sessions")
       .select("id,class_date,class_day,class_time,course_type,batch,created_at,updated_at")
       .eq("class_date", input.classDate)
@@ -325,7 +218,7 @@ const supabaseAttendanceStore: AttendanceRepository = {
     }
 
     const query = input.id
-      ? supabase
+      ? db
           .from("class_sessions")
           .update({
             class_date: input.classDate,
@@ -336,7 +229,7 @@ const supabaseAttendanceStore: AttendanceRepository = {
             updated_at: now,
           })
           .eq("id", input.id)
-      : supabase
+      : db
           .from("class_sessions")
           .insert({
             class_date: input.classDate,
@@ -360,8 +253,8 @@ const supabaseAttendanceStore: AttendanceRepository = {
   },
 
   async saveRoster(sessionId, leadIds) {
-    if (!supabase) return [];
-    const { error: deleteError } = await supabase
+    const db = requireSupabase();
+    const { error: deleteError } = await db
       .from("class_roster")
       .delete()
       .eq("session_id", sessionId);
@@ -376,7 +269,7 @@ const supabaseAttendanceStore: AttendanceRepository = {
       return [];
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from("class_roster")
       .insert(leadIds.map((leadId) => ({ session_id: sessionId, lead_id: leadId })))
       .select("id,session_id,lead_id,created_at");
@@ -390,9 +283,10 @@ const supabaseAttendanceStore: AttendanceRepository = {
   },
 
   async saveMany(inputs) {
-    if (!supabase || inputs.length === 0) return [];
+    const db = requireSupabase();
+    if (inputs.length === 0) return [];
     const now = new Date().toISOString();
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from("attendance_records")
       .upsert(
         inputs.map((input) => ({
@@ -415,8 +309,8 @@ const supabaseAttendanceStore: AttendanceRepository = {
   },
 
   async removeSession(sessionId) {
-    if (!supabase) return;
-    const { error } = await supabase
+    const db = requireSupabase();
+    const { error } = await db
       .from("class_sessions")
       .delete()
       .eq("id", sessionId);
@@ -455,153 +349,4 @@ const supabaseAttendanceStore: AttendanceRepository = {
   },
 };
 
-const localAttendanceStore: AttendanceRepository = {
-  async list() {
-    return readLocalRecords().sort((a, b) => b.classDate.localeCompare(a.classDate));
-  },
-
-  async listSessions() {
-    return readLocalSessions().sort((a, b) => {
-      const dateDiff = b.classDate.localeCompare(a.classDate);
-      return dateDiff || b.classTime.localeCompare(a.classTime);
-    });
-  },
-
-  async listBySession(sessionId) {
-    return readLocalRecords().filter((record) => record.sessionId === sessionId);
-  },
-
-  async listRoster() {
-    return readLocalRoster();
-  },
-
-  async listRosterBySession(sessionId) {
-    return readLocalRoster().filter((member) => member.sessionId === sessionId);
-  },
-
-  async saveSession(input) {
-    const now = new Date().toISOString();
-    const sessions = readLocalSessions();
-    const existing = sessions.find(
-      (session) =>
-        session.id !== input.id &&
-        session.classDate === input.classDate &&
-        session.classTime === input.classTime,
-    );
-    if (existing) {
-      throw new Error(classTimeConflictMessage());
-    }
-
-    const current = input.id ? sessions.find((session) => session.id === input.id) : undefined;
-    const saved: ClassSession = current
-      ? {
-          ...current,
-          classDate: input.classDate,
-          classDay: input.classDay,
-          classTime: input.classTime,
-          courseType: input.courseType,
-          batch: input.batch?.trim() || undefined,
-          updatedAt: now,
-        }
-      : {
-          id: crypto.randomUUID(),
-          classDate: input.classDate,
-          classDay: input.classDay,
-          classTime: input.classTime,
-          courseType: input.courseType,
-          batch: input.batch?.trim() || undefined,
-          createdAt: now,
-          updatedAt: now,
-        };
-    writeLocal([saved, ...sessions.filter((session) => session.id !== saved.id)]);
-    return saved;
-  },
-
-  async saveRoster(sessionId, leadIds) {
-    const now = new Date().toISOString();
-    const sessions = readLocalSessions();
-    const records = readLocalRecords();
-    const roster = readLocalRoster();
-    const saved = leadIds.map((leadId) => {
-      const existing = roster.find(
-        (member) => member.sessionId === sessionId && member.leadId === leadId,
-      );
-      return (
-        existing ?? {
-          id: crypto.randomUUID(),
-          sessionId,
-          leadId,
-          createdAt: now,
-        }
-      );
-    });
-    writeLocal(
-      sessions,
-      records,
-      [
-        ...saved,
-        ...roster.filter((member) => member.sessionId !== sessionId),
-      ],
-    );
-    return saved;
-  },
-
-  async saveMany(inputs) {
-    const now = new Date().toISOString();
-    const sessions = readLocalSessions();
-    const records = readLocalRecords();
-    const sessionDates = new Map(sessions.map((session) => [session.id, session.classDate]));
-    const saved = inputs.map((input) => {
-      const existing = records.find(
-        (record) => record.sessionId === input.sessionId && record.leadId === input.leadId,
-      );
-      const classDate = sessionDates.get(input.sessionId) ?? "";
-      if (existing) {
-        return {
-          ...existing,
-          status: input.status,
-          notes: input.notes?.trim() || undefined,
-          updatedAt: now,
-        };
-      }
-      return {
-        id: crypto.randomUUID(),
-        sessionId: input.sessionId,
-        leadId: input.leadId,
-        classDate,
-        status: input.status,
-        notes: input.notes?.trim() || undefined,
-        createdAt: now,
-        updatedAt: now,
-      };
-    });
-
-    const savedKeys = new Set(saved.map((record) => `${record.sessionId}:${record.leadId}`));
-    writeLocal(sessions, [
-      ...saved,
-      ...records.filter((record) => !savedKeys.has(`${record.sessionId}:${record.leadId}`)),
-    ]);
-    return saved;
-  },
-
-  async removeSession(sessionId) {
-    const sessions = readLocalSessions().filter((session) => session.id !== sessionId);
-    const records = readLocalRecords().filter((record) => record.sessionId !== sessionId);
-    const roster = readLocalRoster().filter((member) => member.sessionId !== sessionId);
-    writeLocal(sessions, records, roster);
-  },
-
-  subscribe(cb) {
-    const handler = () => cb();
-    window.addEventListener(EVENT, handler);
-    window.addEventListener("storage", handler);
-    return () => {
-      window.removeEventListener(EVENT, handler);
-      window.removeEventListener("storage", handler);
-    };
-  },
-};
-
-export const attendanceStore: AttendanceRepository = supabase
-  ? supabaseAttendanceStore
-  : localAttendanceStore;
+export const attendanceStore: AttendanceRepository = supabaseAttendanceStore;

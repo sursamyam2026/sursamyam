@@ -14,8 +14,6 @@ export interface FeeCourse {
   highlight?: boolean;
 }
 
-export const CONVENIENCE_FEE_RUPEES = 150;
-
 export function formatRupee(n: number): string {
   return `₹${n.toLocaleString("en-IN")}`;
 }

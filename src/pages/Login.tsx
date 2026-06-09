@@ -63,7 +63,7 @@ const Login = () => {
               autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="admin@swarshiksha.com"
+              placeholder="admin@sursamyam.com"
               required
             />
           </div>
