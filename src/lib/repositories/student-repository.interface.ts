@@ -1,6 +1,6 @@
 import type { StudentAccount, StudentSession } from "@/lib/student-auth.types";
 
-/** Swap localStorage adapter for Supabase Auth + profiles later. */
+/** Swap demo adapter for Supabase Auth + profiles later. */
 export interface StudentAccountRepository {
   findByEmail(email: string): StudentAccount | undefined;
   create(account: StudentAccount): void;

@@ -1,6 +1,6 @@
 import type { Lead, LeadStatus } from "@/lib/leads.types";
 
-/** Contract for lead persistence — replace localStorage adapter with Supabase later. */
+/** Contract for Supabase-backed lead persistence. */
 export interface LeadRepository {
   list(): Promise<Lead[]>;
   add(input: Omit<Lead, "id" | "status" | "createdAt">): Promise<Lead>;

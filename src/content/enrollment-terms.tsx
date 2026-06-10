@@ -1,6 +1,6 @@
 /**
  * Canonical Terms & Conditions for Sur Samyam online enrollment.
- * TODO: Revisit payment gateway, convenience fee, and refund language when online payments are integrated.
+ * TODO: Revisit payment gateway and refund language when online payments are integrated.
  */
 
 export function EnrollmentTermsContent() {

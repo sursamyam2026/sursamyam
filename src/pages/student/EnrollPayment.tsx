@@ -15,7 +15,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import type { EnrollCheckoutState } from "@/pages/student/EnrollStart";
 import {
-  CONVENIENCE_FEE_RUPEES,
   formatRupee,
   getCourse,
   getMonthlyRupee,
@@ -44,9 +43,7 @@ const EnrollPayment = () => {
   const selectedFormat = state.format ?? "online";
   const monthly = getMonthlyRupee(fc, selectedFormat);
   const registration = fc.registrationRupee;
-  const subtotal = monthly + registration;
-  const convenience = CONVENIENCE_FEE_RUPEES;
-  const grand = subtotal + convenience;
+  const grand = monthly + registration;
   const formatLabel = selectedFormat === "offline" ? "Offline" : "Online";
 
   const handleSubmit = async () => {
@@ -119,14 +116,6 @@ const EnrollPayment = () => {
             <div className="flex justify-between gap-4 border-b border-[#E8D5A3] pb-3">
               <dt className="text-[#4A5E52]">Registration fee (one-time)</dt>
               <dd className="font-medium text-[#1B4D3E]">{formatRupee(registration)}</dd>
-            </div>
-            <div className="flex justify-between gap-4 border-b border-[#E8D5A3] pb-3">
-              <dt className="text-[#4A5E52]">Total</dt>
-              <dd className="font-medium text-[#1B4D3E]">{formatRupee(subtotal)}</dd>
-            </div>
-            <div className="flex justify-between gap-4 border-b border-[#E8D5A3] pb-3">
-              <dt className="text-[#4A5E52]">Convenience fee</dt>
-              <dd className="font-medium text-[#1B4D3E]">{formatRupee(convenience)}</dd>
             </div>
             <div className="flex justify-between gap-4 pt-2 text-base">
               <dt className="font-display font-semibold text-[#1B4D3E]">Grand total</dt>

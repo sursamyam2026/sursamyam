@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+import { requireSupabase, supabase } from "@/lib/supabase";
 
 export interface GalleryImage {
   id: string;
@@ -24,9 +24,8 @@ interface GalleryImageRow {
   source: "seed" | "upload";
 }
 
-const KEY = "swarshiksha:gallery";
-const CACHE_KEY = "swarshiksha:gallery:cache";
-const EVENT = "swarshiksha:gallery:changed";
+const CACHE_KEY = "sursamyam:gallery:cache";
+const EVENT = "sursamyam:gallery:changed";
 const CACHE_TTL_MS = 1000 * 60 * 20;
 let memoryCache: GalleryCache | null = null;
 
@@ -68,23 +67,6 @@ function fromRow(row: GalleryImageRow): GalleryImage {
     createdAt: row.created_at,
     source: row.source,
   };
-}
-
-function readUploads(): GalleryImage[] {
-  try {
-    const raw = localStorage.getItem(KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    return parsed.map(coerceImage).filter(Boolean) as GalleryImage[];
-  } catch {
-    return [];
-  }
-}
-
-function writeUploads(images: GalleryImage[]) {
-  localStorage.setItem(KEY, JSON.stringify(images));
-  notifyGalleryChanged();
 }
 
 function readCache(): GalleryCache | null {
@@ -132,32 +114,21 @@ function clearCache() {
 }
 
 async function fetchImages(limit: number): Promise<GalleryImage[]> {
-  if (supabase) {
-    const { data, error } = await supabase
-      .from("gallery_images")
-      .select("id,title,src,description,created_at,source")
-      .order("created_at", { ascending: false })
-      .range(0, Math.max(limit - 1, 0));
-    if (error) throw error;
+  const db = requireSupabase();
+  const { data, error } = await db
+    .from("gallery_images")
+    .select("id,title,src,description,created_at,source")
+    .order("created_at", { ascending: false })
+    .range(0, Math.max(limit - 1, 0));
+  if (error) throw error;
 
-    const images = ((data ?? []) as GalleryImageRow[]).map(fromRow);
-    writeCache(images);
-    return images;
-  }
-
-  return readUploads().sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-  ).slice(0, limit);
+  const images = ((data ?? []) as GalleryImageRow[]).map(fromRow);
+  writeCache(images);
+  return images;
 }
 
 export const galleryStore = {
   getCached(limit = 60): GalleryImage[] {
-    if (!supabase) {
-      return readUploads().sort(
-        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-      ).slice(0, limit);
-    }
-
     return readCache()?.images.slice(0, limit) ?? [];
   },
 
@@ -186,46 +157,30 @@ export const galleryStore = {
   },
 
   async addMany(inputs: GalleryUploadInput[]): Promise<GalleryImage[]> {
-    if (supabase) {
-      const { data, error } = await supabase
-        .from("gallery_images")
-        .insert(
-          inputs.map((input) => ({
-            title: input.title.trim(),
-            src: input.src,
-            description: input.description?.trim() || null,
-            source: "upload",
-          })),
-        )
-        .select("id,title,src,description,created_at,source");
-      if (error) throw error;
-      clearCache();
-      notifyGalleryChanged();
-      return ((data ?? []) as GalleryImageRow[]).map(fromRow);
-    }
-
-    const uploads = inputs.map((input) => ({
-      id: crypto.randomUUID(),
-      title: input.title.trim(),
-      src: input.src,
-      description: input.description?.trim() || undefined,
-      createdAt: new Date().toISOString(),
-      source: "upload" as const,
-    }));
-    writeUploads([...uploads, ...readUploads()]);
-    return uploads;
+    const db = requireSupabase();
+    const { data, error } = await db
+      .from("gallery_images")
+      .insert(
+        inputs.map((input) => ({
+          title: input.title.trim(),
+          src: input.src,
+          description: input.description?.trim() || null,
+          source: "upload",
+        })),
+      )
+      .select("id,title,src,description,created_at,source");
+    if (error) throw error;
+    clearCache();
+    notifyGalleryChanged();
+    return ((data ?? []) as GalleryImageRow[]).map(fromRow);
   },
 
   async remove(id: string): Promise<void> {
-    if (supabase) {
-      const { error } = await supabase.from("gallery_images").delete().eq("id", id);
-      if (error) throw error;
-      clearCache();
-      notifyGalleryChanged();
-      return;
-    }
-
-    writeUploads(readUploads().filter((image) => image.id !== id));
+    const db = requireSupabase();
+    const { error } = await db.from("gallery_images").delete().eq("id", id);
+    if (error) throw error;
+    clearCache();
+    notifyGalleryChanged();
   },
 
   subscribe(cb: () => void): () => void {
@@ -235,26 +190,20 @@ export const galleryStore = {
     };
     window.addEventListener(EVENT, handler);
 
-    if (supabase) {
-      const channel = supabase
-        .channel("public:gallery_images")
-        .on(
-          "postgres_changes",
-          { event: "*", schema: "public", table: "gallery_images" },
-          handler,
-        )
-        .subscribe();
+    if (!supabase) return () => window.removeEventListener(EVENT, handler);
 
-      return () => {
-        window.removeEventListener(EVENT, handler);
-        void supabase.removeChannel(channel);
-      };
-    }
+    const channel = supabase
+      .channel("public:gallery_images")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "gallery_images" },
+        handler,
+      )
+      .subscribe();
 
-    window.addEventListener("storage", handler);
     return () => {
       window.removeEventListener(EVENT, handler);
-      window.removeEventListener("storage", handler);
+      void supabase.removeChannel(channel);
     };
   },
 };

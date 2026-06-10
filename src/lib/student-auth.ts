@@ -12,9 +12,9 @@ import type {
 } from "@/lib/repositories/student-repository.interface";
 import { finalizeEnrollmentCheckout, leadsStore } from "@/lib/leads";
 
-const ACCOUNTS_KEY = "swarshiksha:student-accounts";
-const SESSION_KEY = "swarshiksha:student-session";
-const EVENT = "swarshiksha:student-auth:changed";
+const ACCOUNTS_KEY = "sursamyam:student-accounts";
+const SESSION_KEY = "sursamyam:student-session";
+const EVENT = "sursamyam:student-auth:changed";
 
 function coerceStudent(raw: unknown): StudentAccount | null {
   if (!raw || typeof raw !== "object") return null;
