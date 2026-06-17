@@ -494,6 +494,7 @@ const EventsManager = () => {
                       id="event-published"
                       checked={isPublished}
                       onCheckedChange={setIsPublished}
+                      className="data-[state=checked]:bg-[#1B4D3E] data-[state=unchecked]:bg-[#D8C08B] [&>span]:bg-[#FDF6EC]"
                     />
                   </div>
 
