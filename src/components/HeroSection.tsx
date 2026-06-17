@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import EventHeroPopup from "@/components/EventHeroPopup";
 import { Images, Sparkles } from "lucide-react";
 import heroBg from "@/assets/hero-bg.jpg";
 import { Link } from "react-router-dom";
@@ -71,8 +72,11 @@ const HeroSection = () => {
               <div className="text-sm text-[#4A5E52]">Years of Teaching</div>
             </div>
           </div>
+
         </div>
       </div>
+
+      <EventHeroPopup />
     </section>
   );
 };

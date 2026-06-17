@@ -10,6 +10,7 @@ import {
   ImagePlus,
   FileCheck,
   CalendarCheck,
+  CalendarDays,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
@@ -21,6 +22,7 @@ const navItems = [
   { to: "/admin/attendance", label: "Attendance", icon: CalendarCheck, end: false },
   { to: "/admin/exam-registrations", label: "Exam Registrations", icon: FileCheck, end: false },
   { to: "/admin/gallery", label: "Gallery", icon: ImagePlus, end: false },
+  { to: "/admin/events", label: "Events", icon: CalendarDays, end: false },
 ];
 
 export const AdminLayout = () => {

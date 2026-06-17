@@ -24,7 +24,10 @@ const sectionLinks = [
   { hash: "classes", label: "Classes" },
 ];
 
-const pageLinks = [{ to: "/syllabus", label: "Syllabus" }];
+const pageLinks = [
+  { to: "/events", label: "Events" },
+  { to: "/syllabus", label: "Syllabus" },
+];
 
 const feesLinks = [
   { to: "/registration/course-details", label: "Courses" },

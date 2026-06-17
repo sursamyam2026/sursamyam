@@ -8,12 +8,15 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import Gallery from "./pages/Gallery";
+import Events from "./pages/Events";
+import EventDetails from "./pages/EventDetails";
 import Syllabus from "./pages/Syllabus";
 import CourseDetails from "./pages/fees/CourseDetails";
 import ExistingStudent from "./pages/fees/ExistingStudent";
 import ExamRegistration from "./pages/fees/ExamRegistration";
 import Dashboard from "./pages/admin/Dashboard";
 import GalleryManager from "./pages/admin/GalleryManager";
+import EventsManager from "./pages/admin/EventsManager";
 import Leads from "./pages/admin/Leads";
 import ExamRegistrations from "./pages/admin/ExamRegistrations";
 import Attendance from "./pages/admin/Attendance";
@@ -48,6 +51,8 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/gallery" element={<Gallery />} />
+          <Route path="/events" element={<Events />} />
+          <Route path="/events/:eventId" element={<EventDetails />} />
           <Route path="/syllabus" element={<Syllabus />} />
           <Route path="/login" element={<Login />} />
           <Route path="/student/enroll" element={<EnrollStart />} />
@@ -78,6 +83,7 @@ const App = () => (
             <Route path="attendance/:sessionId" element={<AttendanceSession />} />
             <Route path="exam-registrations" element={<ExamRegistrations />} />
             <Route path="gallery" element={<GalleryManager />} />
+            <Route path="events" element={<EventsManager />} />
           </Route>
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
