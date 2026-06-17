@@ -3,8 +3,10 @@ import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { eventsStore } from "@/lib/events";
+import type { EventItem } from "@/lib/events";
 import { ArrowLeft, CalendarDays, Clock, MapPin } from "lucide-react";
 import { Link, Navigate, useParams } from "react-router-dom";
+import { useEffect, useState } from "react";
 
 function formatDateTime(value: string, time?: string): string {
   const date = new Date(`${value}T00:00:00`);
@@ -29,10 +31,58 @@ function formatDateTime(value: string, time?: string): string {
 
 const EventDetails = () => {
   const { eventId } = useParams();
-  const event = eventId ? eventsStore.getById(eventId) : null;
+  const [event, setEvent] = useState<EventItem | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
 
-  if (!event || !event.isPublished) {
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadEvent() {
+      if (!eventId) {
+        setNotFound(true);
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        const nextEvent = await eventsStore.getById(eventId);
+        if (!isMounted) return;
+        setEvent(nextEvent);
+        setNotFound(!nextEvent || !nextEvent.isPublished);
+      } catch {
+        if (!isMounted) return;
+        setNotFound(true);
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    }
+
+    void loadEvent();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [eventId]);
+
+  if (notFound) {
     return <Navigate to="/events" replace />;
+  }
+
+  if (isLoading || !event) {
+    return (
+      <div className="min-h-screen bg-[#FDF6EC]">
+        <Navbar />
+        <main className="px-4 pb-16 pt-28 sm:px-6 lg:px-8">
+          <Card className="mx-auto max-w-5xl border-dashed border-[#C9922A] bg-white/70">
+            <CardContent className="flex flex-col items-center px-6 py-16 text-center">
+              <p className="text-sm text-[#4A5E52]">Loading event...</p>
+            </CardContent>
+          </Card>
+        </main>
+        <Footer />
+      </div>
+    );
   }
 
   return (

@@ -1,3 +1,5 @@
+import { requireSupabase, supabase } from "@/lib/supabase";
+
 export interface EventItem {
   id: string;
   title: string;
@@ -26,72 +28,70 @@ export interface EventUploadInput {
   isPublished: boolean;
 }
 
-const STORAGE_KEY = "sursamyam:events:local";
+interface EventRow {
+  id: string;
+  title: string;
+  event_date: string;
+  event_time: string | null;
+  event_end_date: string | null;
+  event_end_time: string | null;
+  home_popup_start_date: string | null;
+  venue: string | null;
+  description: string | null;
+  poster_src: string;
+  is_published: boolean;
+  created_at: string;
+}
+
 const EVENT = "sursamyam:events:changed";
+let memoryCache: EventItem[] = [];
+
+const EVENT_SELECT =
+  "id,title,event_date,event_time,event_end_date,event_end_time,home_popup_start_date,venue,description,poster_src,is_published,created_at";
 
 function notifyEventsChanged() {
   window.dispatchEvent(new Event(EVENT));
 }
 
-function createId(): string {
-  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
-    return crypto.randomUUID();
+function throwSupabaseError(error: { message?: string } | null) {
+  if (error) {
+    throw new Error(error.message || "Supabase request failed.");
   }
-
-  return `event-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
-function coerceEvent(raw: unknown): EventItem | null {
-  if (!raw || typeof raw !== "object") return null;
-  const item = raw as Record<string, unknown>;
-  const id = typeof item.id === "string" ? item.id : "";
-  const title = typeof item.title === "string" ? item.title : "";
-  const eventDate = typeof item.eventDate === "string" ? item.eventDate : "";
-  const posterSrc = typeof item.posterSrc === "string" ? item.posterSrc : "";
+function timeValue(value: string | null | undefined): string | undefined {
+  return value ? value.slice(0, 5) : undefined;
+}
 
-  if (!id || !title || !eventDate || !posterSrc) return null;
-
+function fromRow(row: EventRow): EventItem {
   return {
-    id,
-    title,
-    eventDate,
-    eventTime: typeof item.eventTime === "string"
-      ? item.eventTime
-      : typeof item.event_time === "string"
-        ? item.event_time.slice(0, 5)
-        : undefined,
-    eventEndDate:
-      typeof item.eventEndDate === "string"
-        ? item.eventEndDate
-        : typeof item.event_end_date === "string"
-          ? item.event_end_date
-          : typeof item.homePopupEndDate === "string"
-            ? item.homePopupEndDate
-            : typeof item.home_popup_end_date === "string"
-              ? item.home_popup_end_date
-              : eventDate,
-    eventEndTime:
-      typeof item.eventEndTime === "string"
-        ? item.eventEndTime
-        : typeof item.event_end_time === "string"
-          ? item.event_end_time.slice(0, 5)
-          : typeof item.eventTime === "string"
-            ? item.eventTime
-            : typeof item.event_time === "string"
-              ? item.event_time.slice(0, 5)
-              : undefined,
-    homePopupStartDate:
-      typeof item.homePopupStartDate === "string"
-        ? item.homePopupStartDate
-        : typeof item.home_popup_start_date === "string"
-          ? item.home_popup_start_date
-          : undefined,
-    venue: typeof item.venue === "string" ? item.venue : undefined,
-    description: typeof item.description === "string" ? item.description : undefined,
-    posterSrc,
-    isPublished: item.isPublished !== false,
-    createdAt:
-      typeof item.createdAt === "string" ? item.createdAt : new Date().toISOString(),
+    id: row.id,
+    title: row.title,
+    eventDate: row.event_date,
+    eventTime: timeValue(row.event_time),
+    eventEndDate: row.event_end_date ?? undefined,
+    eventEndTime: timeValue(row.event_end_time),
+    homePopupStartDate: row.home_popup_start_date ?? undefined,
+    venue: row.venue ?? undefined,
+    description: row.description ?? undefined,
+    posterSrc: row.poster_src,
+    isPublished: row.is_published,
+    createdAt: row.created_at,
+  };
+}
+
+function toRow(input: EventUploadInput) {
+  return {
+    title: input.title.trim(),
+    event_date: input.eventDate,
+    event_time: input.eventTime || null,
+    event_end_date: input.eventEndDate || input.eventDate,
+    event_end_time: input.eventEndTime || input.eventTime || null,
+    home_popup_start_date: input.homePopupStartDate || null,
+    venue: input.venue?.trim() || null,
+    description: input.description?.trim() || null,
+    poster_src: input.posterSrc,
+    is_published: input.isPublished,
   };
 }
 
@@ -103,120 +103,126 @@ function sortEvents(events: EventItem[]): EventItem[] {
   });
 }
 
-function readEvents(): EventItem[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
+async function fetchEvents(
+  limit: number,
+  options: { publishedOnly?: boolean } = {},
+): Promise<EventItem[]> {
+  const db = requireSupabase();
+  let query = db.from("events").select(EVENT_SELECT);
 
-    return sortEvents(parsed.map(coerceEvent).filter(Boolean) as EventItem[]);
-  } catch {
-    return [];
+  if (options.publishedOnly) {
+    query = query.eq("is_published", true);
   }
-}
 
-function writeEvents(events: EventItem[]) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(sortEvents(events)));
-  } catch {
-    throw new Error("Unable to save event locally. The selected image may be too large for browser storage.");
-  }
+  const { data, error } = await query
+    .order("event_date", { ascending: true })
+    .order("created_at", { ascending: false })
+    .range(0, Math.max(limit - 1, 0));
+  throwSupabaseError(error);
+
+  const events = ((data ?? []) as EventRow[]).map(fromRow);
+  memoryCache = sortEvents(events);
+  return memoryCache;
 }
 
 export const eventsStore = {
   getCached(limit = 60): EventItem[] {
-    return readEvents().slice(0, limit);
-  },
-
-  getById(id: string): EventItem | null {
-    return readEvents().find((event) => event.id === id) ?? null;
+    return memoryCache.slice(0, limit);
   },
 
   hasFreshCache(): boolean {
-    return true;
+    return memoryCache.length > 0;
+  },
+
+  async getById(id: string): Promise<EventItem | null> {
+    const cached = memoryCache.find((event) => event.id === id);
+    if (cached) return cached;
+
+    const db = requireSupabase();
+    const { data, error } = await db
+      .from("events")
+      .select(EVENT_SELECT)
+      .eq("id", id)
+      .maybeSingle();
+    throwSupabaseError(error);
+
+    return data ? fromRow(data as EventRow) : null;
   },
 
   async list(
     limit = 60,
     options: { publishedOnly?: boolean } = {},
   ): Promise<EventItem[]> {
-    const events = readEvents();
-    return (options.publishedOnly
-      ? events.filter((event) => event.isPublished)
-      : events
-    ).slice(0, limit);
+    return fetchEvents(limit, options);
   },
 
   async refresh(
     limit = 60,
     options: { publishedOnly?: boolean } = {},
   ): Promise<EventItem[]> {
-    return this.list(limit, options);
+    return fetchEvents(limit, options);
   },
 
   async add(input: EventUploadInput): Promise<EventItem> {
-    const nextEvent: EventItem = {
-      id: createId(),
-      title: input.title.trim(),
-      eventDate: input.eventDate,
-      eventTime: input.eventTime || undefined,
-      eventEndDate: input.eventEndDate || input.eventDate,
-      eventEndTime: input.eventEndTime || input.eventTime || undefined,
-      homePopupStartDate: input.homePopupStartDate || undefined,
-      venue: input.venue?.trim() || undefined,
-      description: input.description?.trim() || undefined,
-      posterSrc: input.posterSrc,
-      isPublished: input.isPublished,
-      createdAt: new Date().toISOString(),
-    };
+    const db = requireSupabase();
+    const { data, error } = await db
+      .from("events")
+      .insert(toRow(input))
+      .select(EVENT_SELECT)
+      .single();
+    throwSupabaseError(error);
 
-    writeEvents([nextEvent, ...readEvents()]);
+    const event = fromRow(data as EventRow);
+    memoryCache = sortEvents([event, ...memoryCache]);
     notifyEventsChanged();
-    return nextEvent;
+    return event;
   },
 
   async update(id: string, input: EventUploadInput): Promise<EventItem> {
-    const events = readEvents();
-    const existing = events.find((event) => event.id === id);
-    if (!existing) throw new Error("Event not found.");
+    const db = requireSupabase();
+    const { data, error } = await db
+      .from("events")
+      .update(toRow(input))
+      .eq("id", id)
+      .select(EVENT_SELECT)
+      .single();
+    throwSupabaseError(error);
 
-    const nextEvent: EventItem = {
-      ...existing,
-      title: input.title.trim(),
-      eventDate: input.eventDate,
-      eventTime: input.eventTime || undefined,
-      eventEndDate: input.eventEndDate || input.eventDate,
-      eventEndTime: input.eventEndTime || input.eventTime || undefined,
-      homePopupStartDate: input.homePopupStartDate || undefined,
-      venue: input.venue?.trim() || undefined,
-      description: input.description?.trim() || undefined,
-      posterSrc: input.posterSrc,
-      isPublished: input.isPublished,
-    };
-
-    writeEvents(events.map((event) => (event.id === id ? nextEvent : event)));
+    const event = fromRow(data as EventRow);
+    memoryCache = sortEvents(
+      memoryCache.map((cachedEvent) => (cachedEvent.id === id ? event : cachedEvent)),
+    );
     notifyEventsChanged();
-    return nextEvent;
+    return event;
   },
 
   async remove(id: string): Promise<void> {
-    writeEvents(readEvents().filter((event) => event.id !== id));
+    const db = requireSupabase();
+    const { error } = await db.from("events").delete().eq("id", id);
+    throwSupabaseError(error);
+
+    memoryCache = memoryCache.filter((event) => event.id !== id);
     notifyEventsChanged();
   },
 
   subscribe(cb: () => void): () => void {
     const handler = () => cb();
-    const storageHandler = (event: StorageEvent) => {
-      if (event.key === STORAGE_KEY) cb();
-    };
-
     window.addEventListener(EVENT, handler);
-    window.addEventListener("storage", storageHandler);
+
+    if (!supabase) return () => window.removeEventListener(EVENT, handler);
+
+    const channel = supabase
+      .channel("public:events")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "events" },
+        handler,
+      )
+      .subscribe();
 
     return () => {
       window.removeEventListener(EVENT, handler);
-      window.removeEventListener("storage", storageHandler);
+      void supabase.removeChannel(channel);
     };
   },
 };
