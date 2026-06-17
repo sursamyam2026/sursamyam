@@ -23,5 +23,6 @@ export function useAuth() {
     isAuthenticated: session !== null,
     login: auth.login,
     logout: auth.logout,
+    updatePassword: auth.updatePassword,
   };
 }

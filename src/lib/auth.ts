@@ -80,6 +80,37 @@ export const auth = {
     return { ok: true };
   },
 
+  async updatePassword(
+    currentPassword: string,
+    newPassword: string,
+  ): Promise<{ ok: true } | { ok: false; error: string }> {
+    if (!supabase) {
+      return {
+        ok: false,
+        error: "Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.",
+      };
+    }
+
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    const email = sessionData.session?.user.email;
+
+    if (sessionError || !email) {
+      return { ok: false, error: "Please sign in again before changing the password." };
+    }
+
+    const { error: updateError } = await supabase.auth.updateUser({
+      password: newPassword,
+      currentPassword,
+    });
+
+    if (updateError) {
+      return { ok: false, error: updateError.message || "Unable to update password." };
+    }
+
+    notifyAuthChanged();
+    return { ok: true };
+  },
+
   async logout(): Promise<void> {
     if (supabase) {
       await supabase.auth.signOut();

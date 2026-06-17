@@ -21,6 +21,7 @@ import Leads from "./pages/admin/Leads";
 import ExamRegistrations from "./pages/admin/ExamRegistrations";
 import Attendance from "./pages/admin/Attendance";
 import AttendanceSession from "./pages/admin/AttendanceSession";
+import AccountSettings from "./pages/admin/AccountSettings";
 import { AdminLayout } from "./components/admin/AdminLayout";
 import { ProtectedRoute } from "./components/admin/ProtectedRoute";
 import EnrollStart from "./pages/student/EnrollStart";
@@ -84,6 +85,7 @@ const App = () => (
             <Route path="exam-registrations" element={<ExamRegistrations />} />
             <Route path="gallery" element={<GalleryManager />} />
             <Route path="events" element={<EventsManager />} />
+            <Route path="account" element={<AccountSettings />} />
           </Route>
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

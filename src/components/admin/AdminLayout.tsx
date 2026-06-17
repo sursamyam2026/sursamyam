@@ -11,6 +11,7 @@ import {
   FileCheck,
   CalendarCheck,
   CalendarDays,
+  Settings,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
@@ -23,6 +24,7 @@ const navItems = [
   { to: "/admin/exam-registrations", label: "Exam Registrations", icon: FileCheck, end: false },
   { to: "/admin/gallery", label: "Gallery", icon: ImagePlus, end: false },
   { to: "/admin/events", label: "Events", icon: CalendarDays, end: false },
+  { to: "/admin/account", label: "Account", icon: Settings, end: false },
 ];
 
 export const AdminLayout = () => {
