@@ -33,6 +33,9 @@ add column if not exists home_popup_start_date date;
 
 alter table public.events enable row level security;
 
+grant select on public.events to anon, authenticated;
+grant insert, update, delete on public.events to authenticated;
+
 drop policy if exists "Public can read published events" on public.events;
 drop policy if exists "Admins can manage events" on public.events;
 
